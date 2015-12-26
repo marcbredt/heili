@@ -1,0 +1,15 @@
+heili (0.0.1) unstable; urgency=low
+
+  * Initial release containing merged and working components and some
+    additional structure elements.
+    - file logger
+    - xml document handler
+    - auto class loader
+    - managers and registers
+    - main exceptions
+    - serialization methods
+    - configurations and specifications for
+      # doxygen
+      # phpunit
+
+ -- Marc Bredt <marc.bredt@gmail.com>  Sat, 26 Dec 2015 07:46:51 +0100

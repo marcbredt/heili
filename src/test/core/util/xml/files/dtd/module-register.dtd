@@ -1,0 +1,15 @@
+<!ELEMENT root (modules*) >
+
+<!ELEMENT modules (module*) >
+<!ATTLIST module type CDATA #REQUIRED class CDATA #IMPLIED context CDATA #REQUIRED >
+
+<!ELEMENT module (class*, methods+) >
+<!ELEMENT methods (method*) >
+<!ELEMENT class (#PCDATA) >
+
+<!ELEMENT method (param*) >
+<!ATTLIST method name CDATA #REQUIRED nparam CDATA #REQUIRED >
+
+<!ELEMENT param EMPTY >
+<!ATTLIST param name CDATA #REQUIRED value CDATA #REQUIRED >
+

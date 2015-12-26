@@ -1,0 +1,101 @@
+Notes on this path
+------------------
+* merging path
+
+Modules
+-------
+* language
+* calendar
+* ...
+
+Packages
+--------
+* ant
+  * build script config
+* ant-contrib
+  * if then else in ant build configurations
+* php
+  * the php package needs to be built with sysvsem enabled
+* php-log
+  * core application contains a filelogger extending Log
+* phpunit
+  * php-codecoverage  # for code coverage
+  * php5-xdebug       # for code coverage/profiling
+    * OPTIONAL webgrind to read cachgrind files via webinterface
+  * php5-token-stream # for code coverage
+    * bootstrap the autoloader from this package 
+    * or better run the one provided by the application
+  * php5-mcrypt
+    * for testing purposes, creating random hashes
+  * OPTIONAL phpunit-selenium, phpunit-story 
+    * for loading phpunit's selenium classes
+    * avoids holy cow messages of own autoloader
+* doxygen
+
+Stuff on versions
+-----------------
+* php
+  * 5.6.1, $nowait, sem_acquire
+
+Documentation
+-------------
+* doxygen src/config/doxygen/doxygen.conf
+* ant to-doc
+* ./build - choose to-doc
+
+Conventions
+-----------
+* classes must be named name.class.php
+  * every additional class need to extend AccessibleObject
+    to be able to check its (method) parameters first
+  * define no constructors for those classes 
+* test classes are named name.test.class.php
+* szenario tests can be created using phpunits testsuites
+* preamble for setting up include_path to be able to load classes using relative
+  pathes from root
+* placeholders in configuration or source files will be replaced 
+  during deploy/test runs or whenever needed
+  * e.g. @php-deploy-path@
+  * have a look at build.xml, especially the last targets
+* using namespaces (for external classes)
+  * http://stackoverflow.com/questions/32478962
+  * namespaced class files within other namespaces need to be called
+    with root namespace prefix
+    * \util\sth\Class replaces util\sth\Class if namespace is not
+      util\sth
+* test files
+  * class file [Cc]lass[Nn]ame.class.php
+  * corresponding testfile [Cc]lass[Nn]ame[Tt]est.test.class.php
+
+Testing
+-------
+* phpunit for unit and simple scenario tests
+* hinject for request scenarios/tests
+  * simple vhost creation
+
+Deploy
+------
+* ./build - choose all
+* if run as root directories and files will be chowned AND chmodded otherwise just chmodded
+
+Modules
+-------
+* writing modules
+  * registering - config 
+  * usage/integration - evaluation of input
+
+Notes on core loadings
+----------------------
+* Session
+* Autoload 
+* Exception
+* Configuration
+* Request
+* Protocol
+
+Modifying CHANGELOG
+-------------------
+$ export DEBFULLNAME="Marc Bredt"; export DEBEMAIL="marc.bredt@gmail.com"
+$ dch -c trunk/CHANGELOG --package kaese --distribution stable --create -v 0.0.2
+$ dch -c trunk/CHANGELOG -r
+$ dch -c trunk/CHANGELOG -i

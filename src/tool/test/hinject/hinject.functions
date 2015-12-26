@@ -1,0 +1,180 @@
+#!/bin/bash
+
+## build curl command from configuration file
+get_curl_operation_command() {
+  local name=${1}
+
+  local head=" -H \"Expect:\"" # avoids/disables "Expect: 100-continue"-header
+  local nval=$(${XMLLINT} --xpath 'count(//operation[@name="'${name}'"]/header/values/value)' ${HEADERCONFIG}) 
+  for((i=1; i<=${nval}; ((i++)))); do
+    head="${head} -H \"$(${XMLLINT} --xpath '//operation[@name="'${name}'"]/header/values/value['${i}']/@name' ${HEADERCONFIG} | ${CUT} -d '"' -f2): $(${XMLLINT} --xpath '//operation[@name="'${name}'"]/header/values/value['${i}']/text()' ${HEADERCONFIG})\""
+  done
+
+  local meth=" -X $(${XMLLINT} --xpath '//operation[@name="'${name}'"]/method/text()' ${HEADERCONFIG})"
+  local url=" \"$( ${ECHO} "$(${XMLLINT} --xpath '//operation[@name="'${name}'"]/url/text()' ${HEADERCONFIG})" | ${RECODE} html..ascii)\""
+
+  local withdata="$(${XMLLINT} --xpath 'string(//operation[@name="'${name}'"]/@with-data)' ${HEADERCONFIG})"
+  if [ "${withdata}" == "y" ]; then ${ECHO} "${CURL} -v -k -s${meth}${head} --data-binary \"@%DATA%\"${url}";
+  else ${ECHO} "${CURL} -v -k -s${meth}${head}${url}"; fi
+}
+
+## replace globals %GLOBAL% defined in global-tag
+replace_with_globals(){
+  local s="${1}"
+  local nglo=$(${XMLLINT} --xpath 'count(//global/*)' "${HEADERCONFIG}")
+  for((i=1; i<=${nglo}; ((i++)))); do
+    local replace="$(${XMLLINT} --xpath 'string(//global/*['${i}']/@replace)' "${HEADERCONFIG}")"
+    local value=""
+    local rstoreas="$(${XMLLINT} --xpath 'string(//global/*['${i}']/@storeas)' "${HEADERCONFIG}")"
+    if [ "x${rstoreas}" = "x" ]; then 
+      value="$(${XMLLINT} --xpath '//global/*['${i}']/text()' "${HEADERCONFIG}")"
+    else
+      # check if the uppercase storeas value already exist
+      if [ "x$(${EVAL} "${ECHO} \${${rstoreas^^}}")" = "x" ]; then
+        value="$(${XMLLINT} --xpath '//global/*['${i}']/text()' "${HEADERCONFIG}")"
+        value="$(${EVAL} "${ECHO} ${value}")"
+
+        # NOTE: exports will not work in subshells, so run this function
+        #       if you want some global to be stored in your environment
+        #       e.g. a bundary tha should be the same for each (sub)shell level
+        ${EVAL} "${EXPORT} ${rstoreas^^}=\"$(${ECHO} "${value}")\""
+      else
+        value="$(${EVAL} "${ECHO} \${${rstoreas^^}}")"
+      fi
+    fi
+    s=$(${ECHO} "${s}" | ${SED} -e 's#'"${replace}"'#'"${value}"'#g')
+  done
+  ${ECHO} ${s}
+}
+
+## replace globals %VAR% in a string provided by mapping string '%VAR1%,VAL1,%VAR2%,VAL2'
+replace_with_internals(){
+  local saim="${1}"
+  local smap="${2}"
+  local sdel="${3}"
+  local oi="${IFS}"
+  IFS="${sdel}"
+  local map=($(${ECHO} -n "${smap}"))
+  for((i=0;i<${#map[@]};i=$((${i}+2)))); do
+    local replace="${map[${i}]}"
+    local value="${map[$((${i}+1))]}"
+    saim="$(${ECHO} ${saim} | ${SED} -e 's#'"${replace}"'#'"${value}"'#g')"
+  done
+  IFS=${oi}
+  ${ECHO} "${saim}"
+}
+ 
+# msg seen
+# 
+# 1 Du hast das notwendige Werkzeug nicht!
+# 2 Das Objekt existiert nicht mehr!
+# 3 Du befindest dich im Kampf!
+# 4 Ein Geist kann diese Handlung nicht ausführen! Um dich wiederbeleben zu lassen, besuch den nächstgelegenen Tempel.
+# 5 Du hast nicht den notwendigen Beruf! 
+# 7 Der Versuch ist fehlgeschlagen!
+# 8 Du hast nicht genug Berufserfahrung!
+#
+# my messages
+# 6 Minigame needs to be solved!
+#
+handle_message() {
+  local msg="${1}"
+  local signalids="2,9"
+
+  bgproc="$(sound_play_background)"
+  trap_create_kill "${bgproc}" "${signalids}"
+
+  if [[ "${msg}" =~ Werkzeug ]]; then
+    # 1
+    ${ECHO} "Warning: Character not equipped with tool. Trying to requip." 
+    handle_fatal_message 1 "${bgproc}" "${signalids}"
+    break
+  elif [[ "${msg}" =~ Kampf ]]; then
+    # 3
+    ${ECHO} "Warning: Character in fight. Trying to die." 
+    handle_fatal_message 2 "${bgproc}" "${signalids}"
+    break
+  elif [[ "${msg}" =~ Geist ]]; then
+    # 4
+    ${ECHO} "Warning: Character dead. Resurrecting and moving to last known destination." 
+    handle_fatal_message 4 "${bgproc}" "${signalids}"
+    break
+  elif [[ "${msg}" =~ Minigame ]]; then
+    # 6
+    ${ECHO} "Warning: Minigame needs to be solved." 
+    handle_fatal_message 6 "${bgproc}" "${signalids}"
+    break
+  elif [[ "${msg}" =~ Berufserfahrung ]]; then
+    # 8
+    ${ECHO} "Warning: Cannot farm specified items." 
+    break
+  else
+    # 2, 5, 7
+    ${ECHO} "Info: Message not fatal. Continuing." 
+    ${KILL} -s 2 ${bgproc} 2>/dev/null
+    trap_destroy "${signalids}"
+  fi  
+
+}
+
+handle_fatal_message() {
+  local mid="${1}"
+  local bgproc="${2}"
+  local signalids="${3}"
+
+  case ${mid} in
+    1 ) 
+        proc_wait "${bgproc}" 2>/dev/null
+        ;;
+
+    3 ) 
+        proc_wait "${bgproc}" 2>/dev/null
+        #${KILL} -s 2 ${bgproc} 2>/dev/null
+        ;;
+
+    4 ) 
+        #${KILL} -s 2 ${bgproc} 2>/dev/null
+        proc_wait "${bgproc}" 2>/dev/null
+        ;;
+    
+    6 ) 
+        # TODO: get minigame, solve minigame, send solution
+        #       replace wait with puzzle solver command and send sigint to ${!} afterwards
+        proc_wait "${bgproc}" 2>/dev/null
+        ;;
+
+  esac
+
+  trap_destroy "${signalids}"
+
+}
+
+sound_play_background() {
+  ${ECHO} "In here"
+  ${MPG321} -q ${SOUNDFILE} 2>/dev/null &
+  ${ECHO} ${!}
+}
+
+proc_wait() {
+  local procid="${1}"
+  wait ${procid}
+}
+
+trap_create_kill() {
+  local bgproc="${1}"
+  local signalids="${2}"
+
+  for s in $(${ECHO} ${signalids//,/ }); do
+    trap '"${KILL}" -9 "${bgproc}"' 2
+  done
+
+  disown ${bgproc}
+} 
+
+trap_destroy() {
+  local signalids="${1}"
+
+  for s in $(${ECHO} ${signalids//,/ }); do
+    trap - ${s}
+  done
+}

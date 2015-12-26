@@ -1,0 +1,425 @@
+<project name="heili" basedir="." default="to-test" >
+
+  <!-- 
+       $ ant -lib /usr/share/java/ant-contrib.jar 
+             -Ddoc-build=document.presentation 
+             full 
+       enable ant-contribs tasks
+  --> 
+  <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+
+  <tstamp>
+    <format property="build-ts" pattern="yyyyMMddhhmmss" locale="de,DE" />
+  </tstamp>
+
+  <!-- properties -->
+
+  <!-- global -->
+  <property name="pj-name" value="heili" />
+
+  <property name="dir-src" value="${basedir}/src" />
+  <property name="dir-src-core" value="${dir-src}/core" />
+  <property name="dir-src-util" value="${dir-src}/util" />
+  <property name="dir-src-tool" value="${dir-src}/tool" />
+  <property name="dir-doc" value="${basedir}/doc" />
+  <property name="dir-log" value="${basedir}/log" />
+  <property name="dir-log-file" value="${dir-log}/${pj-name}.log" />
+  <property name="dir-log-xdebug" value="${dir-log}/xdebug" />
+  <property name="dir-log-php-error-file" value="${dir-log}/php-error.log" />
+  <property name="dir-deploy" value="${basedir}/deploy" />
+
+  <!-- target/deploy value -->
+  <property name="exe-stat" location="/usr/bin/stat" />
+  <property name="user-target" value="www-data" />
+  <exec executable="${exe-stat}" outputproperty="user-basedir">
+    <arg value="-c" />
+    <arg value="%U" />
+    <arg value="${basedir}" />
+  </exec>
+  <property name="group-target" value="www-data" />
+  <exec executable="${exe-stat}" outputproperty="group-basedir">
+    <arg value="-c" />
+    <arg value="%G" />
+    <arg value="${basedir}" />
+  </exec>
+  <property name="rights-dir-deploy" value="0770" />
+  <property name="rights-file-deploy" value="0660" />
+
+  <!-- xmllint -->
+  <property name="exe-xmllint" location="/usr/bin/xmllint" />
+
+  <!-- doxygen -->
+  <property name="exe-doxygen" location="/usr/bin/doxygen" />
+  <property name="confdir-doxygen" location="${dir-src}/conf/doxygen" />
+  <property name="conf-doxygen" location="${confdir-doxygen}/doxygen.conf" />
+  <property name="confvalue-doxygen-pjname" value="${pj-name}" />
+  <property name="confvalue-doxygen-indir" location="${dir-src}" />
+  <property name="confvalue-doxygen-outdir" location="${dir-doc}/doxygen/" />
+ 
+  <!-- phpunit -->
+  <property name="exe-php" location="/usr/bin/php" />
+  <property name="exe-phpunit" location="/usr/bin/phpunit" />
+  <property name="exe-phpunit-getsuites" location="${dir-src-tool}/build/phpunit-getsuites" />
+  <property name="confdir-phpunit" location="${dir-src}/conf/phpunit" />
+  <property name="conf-phpunit" location="${confdir-phpunit}/phpunit.xml" />
+  <property name="confvalue-phpunit-indir" location="${dir-src}/test" />
+  <property name="phpunit-log-dir" location="${dir-log}/phpunit" />
+
+  <!-- for bash executions -->
+  <property name="exe-bash" location="/bin/bash" />
+  <property name="exe-phpunit-getsuites" location="${dir-src-tool}/build/phpunit-getsuites" />
+
+  <!-- targets -->
+  <target name="all" depends="clean,deploy" />
+  <target name="clean" depends="clean-doc,clean-deploy,clean-log" />
+  <target name="deploy" depends="to-log,to-doc,to-test,to-deploy" />
+  <target name="test" depends="clean,to-src-undoreplace,to-test" />
+
+  <target name="clean-deploy">
+    <delete includeemptydirs="true" failonerror="false">
+      <fileset dir="${dir-deploy}" includes="**/*" />
+      <dirset dir="${dir-deploy}" />
+    </delete> 
+  </target>
+
+  <target name="clean-doc">
+    <delete includeemptydirs="true" failonerror="false">
+      <fileset dir="${dir-doc}" includes="**/*" />
+      <dirset dir="${dir-doc}" />
+    </delete> 
+  </target>
+
+  <target name="clean-log">
+    <delete includeemptydirs="true" failonerror="false">
+      <fileset dir="${dir-log}" includes="**/*" />
+      <dirset dir="${dir-log}" />
+    </delete> 
+  </target>
+
+  <!-- excludes for a fileset need to be static -->
+  <target name="to-deploy" depends="clean-deploy">
+
+    <mkdir dir="${dir-deploy}" />
+
+    <copy includeemptydirs="true" todir="${dir-deploy}" failonerror="true">
+      <fileset dir="${dir-src}" includes="**/*">
+        <exclude name="**/conf/doxygen/" />
+        <exclude name="**/conf/phpunit/" />
+        <exclude name="**/build/" />
+        <exclude name="**/test/" />
+        <exclude name="*.swp" />
+        <exclude name="**/*.swp" />
+      </fileset>
+    </copy> 
+
+    <!-- replace config values in (.xml) config files -->
+    <foreach target="inactive_to-replace-config-values" param="rfile">
+      <path>
+        <fileset dir="${dir-deploy}" casesensitive="yes">
+          <include name="*.php" />
+          <include name="**/*.php" />
+          <include name="*.xml" />
+          <include name="**/*.xml" />
+        </fileset>
+      </path>
+    </foreach>
+
+    <!-- chown for webroot and log dir to make it accessible for
+         the web server instance -->
+    <if> 
+      <equals arg1="${user.name}" arg2="root" />
+      <then>
+        <foreach target="inactive_to-chown" 
+                 list="${dir-deploy}" param="curdir" /> 
+        <foreach target="inactive_to-chown" 
+                 list="${dir-log}" param="curdir" /> 
+      </then>
+    </if>
+
+    <!-- chmod webroot files -->
+    <antcall target="inactive_to-chmod">
+      <param name="curdir" value="${dir-deploy}" />
+    </antcall>
+
+    <!-- chmod log dir files -->
+    <antcall target="inactive_to-chmod">
+      <param name="curdir" value="${dir-log}" />
+    </antcall>
+
+  </target>
+
+  <!-- chown/chmod for created directories -->
+  <target name="inactive_to-chown">
+    <echo message="chowning ${curdir}" />
+    <chown owner="${user-target}" type="dir" file="${curdir}" />
+    <chown owner="${user-target}" type="both">
+      <fileset dir="${curdir}" casesensitive="yes">
+        <include name="**/*" />
+      </fileset>
+    </chown>
+    <chgrp group="${group-target}" type="both" file="${curdir}" />
+    <chgrp group="${group-target}" type="both">
+      <fileset dir="${curdir}" casesensitive="yes">
+        <include name="**/*" />
+      </fileset>
+    </chgrp>
+  </target> 
+
+  <!-- set file and directory permissions -->
+  <target name="inactive_to-chmod"> 
+    <echo message="chmodding ${curdir}" />
+    <chmod type="file" perm="${rights-file-deploy}">
+      <fileset dir="${curdir}" casesensitive="yes">
+        <include name="**/*" />
+      </fileset>
+    </chmod>
+    <chmod type="dir" perm="${rights-dir-deploy}" file="${curdir}" />
+    <chmod type="dir" perm="${rights-dir-deploy}">
+      <fileset dir="${curdir}" casesensitive="yes">
+        <include name="**/*" />
+      </fileset>
+    </chmod>
+  </target>
+
+  <!-- setup log values -->
+  <target name="to-log">
+    <mkdir dir="${dir-log}" />
+    <mkdir dir="${phpunit-log-dir}" />
+    <mkdir dir="${dir-log-xdebug}" />
+    <!-- <touch file="${dir-log-file}" /> -->
+  </target>
+
+  <!-- replace globals in src files to be able to execute some interactive
+       operations on the src for testing using 'php -a' -->
+  <target name="to-src-replace">
+    <!-- reset modded preamble in php files -->
+    <foreach target="inactive_to-replace-config-values" param="rfile">
+      <path> 
+        <fileset dir="${dir-src}" casesensitive="yes">
+          <include name="*.php" />
+          <include name="**/*.php" />
+          <include name="*.xml" />
+          <include name="**/*.xml" />
+        </fileset>
+      </path> 
+    </foreach>
+  </target>
+
+  <!-- reset replacements to be able to test full test/deploy process -->
+  <target name="to-src-undoreplace">
+    <!-- reset modded preamble in php files -->
+    <foreach target="inactive_to-restore-config-values" param="rfile">
+      <path> 
+        <fileset dir="${dir-src}" casesensitive="yes">
+          <include name="*.php" />
+          <include name="**/*.php" />
+          <include name="*.xml" />
+          <include name="**/*.xml" />
+        </fileset>
+      </path> 
+    </foreach>
+  </target>
+
+  <!-- run doxygen, but replace config values before --> 
+  <target name="to-doc" depends="clean-doc">
+
+    <mkdir dir="${dir-doc}" />
+
+    <antcall target="inactive_to-replace-config-values">
+      <param name="rfile" value="${conf-doxygen}" />
+    </antcall>
+
+    <exec executable="${exe-doxygen}" failonerror="true">
+      <arg value="${conf-doxygen}" />
+    </exec> 
+
+    <antcall target="inactive_to-restore-config-values">
+      <param name="rfile" value="${conf-doxygen}" />
+    </antcall>
+
+    <!-- chown for webroot -->
+    <if>
+      <equals arg1="${user.name}" arg2="root" />
+      <then>
+        <foreach target="inactive_to-chown" list="${dir-doc}" param="curdir" />
+      </then>
+    </if>
+
+    <!-- chmod -->
+    <antcall target="inactive_to-chmod">
+      <param name="curdir" value="${dir-doc}" />
+    </antcall>
+
+  </target>
+ 
+  <!-- check lexis of each file -->
+  <target name="to-test-lex">
+    <foreach target="inactive_to-test-lex-php" param="file">
+      <path> 
+        <!-- use php -l for php files -->
+        <fileset dir="${dir-src}" casesensitive="yes">
+          <include name="**/*.php" />
+        </fileset>
+      </path> 
+    </foreach>
+    <foreach target="inactive_to-test-lex-xml" param="file">
+      <path> 
+        <!-- use xmllint for xml files -->
+        <fileset dir="${dir-src}" casesensitive="yes">
+          <include name="**/*.xml" />
+        </fileset>
+      </path> 
+    </foreach>
+  </target>
+
+  <!-- check lexis of php files -->
+  <target name="inactive_to-test-lex-php">
+    <exec executable="${exe-php}" failonerror="true">
+      <arg value="-l" />
+      <arg value="${file}" />
+    </exec>
+  </target>
+
+  <!-- check lexis of php files -->
+  <target name="inactive_to-test-lex-xml">
+    <exec executable="${exe-xmllint}" resultproperty="ret-lex-xml" failonerror="true">
+      <arg value="--noout" />
+      <arg value="${file}" />
+    </exec>
+    <if>
+      <equals arg1="0" arg2="${ret-lex-xml}" />
+      <then>
+        <echo message="No syntax errors detected in ${file}" />
+      </then>
+    </if>
+  </target>
+
+  <!-- run phpunit, but replace config values before --> 
+  <target name="to-test" depends="clean,to-log,to-test-lex">
+
+    <!-- replace config values in (.php) source files and conf files -->
+    <foreach target="inactive_to-replace-config-values" param="rfile">
+      <path>
+        <fileset dir="${dir-src}" casesensitive="yes">
+          <include name="*.php" />
+          <include name="**/*.php" />
+          <include name="*.xml" />
+          <include name="**/*.xml" />
+        </fileset>
+      </path>
+    </foreach>
+
+    <!-- get testsuites to be run -->
+    <exec executable="${exe-phpunit-getsuites}" failonerror="true" 
+          outputproperty="phpunit-testsuites">
+      <arg value="${conf-phpunit}" />
+    </exec>
+
+    <echo />
+    <echo message="Found testsuites: ">${phpunit-testsuites}</echo>
+
+    <!-- foreach active testsuite run phpunit, requires ant-contrib -->
+    <for list="${phpunit-testsuites}" param="phpunit-testsuite-value">
+      <sequential>
+        <echo />
+        <echo message="Processing testsuite: ">@{phpunit-testsuite-value}</echo>
+        <!-- do not fail on errors to reset the preamble -->
+        <exec executable="${exe-phpunit}" failonerror="false"> 
+          <!--<arg value="-debug" />-->
+          <arg value="--verbose" />
+          <arg value="--strict" />
+          <arg value="--no-globals-backup" />
+          <arg value="-c" />
+          <arg value="${conf-phpunit}" />
+          <arg value="--testsuite" />
+          <arg value="@{phpunit-testsuite-value}" />
+        </exec> 
+      </sequential>
+    </for>
+
+    <!-- reset modified (.php) source files -->
+    <foreach target="inactive_to-restore-config-values" param="rfile">
+      <path>
+        <fileset dir="${dir-src}" casesensitive="yes">
+          <include name="*.php" />
+          <include name="**/*.php" />
+          <include name="*.xml" />
+          <include name="**/*.xml" />
+        </fileset>
+      </path>
+    </foreach>
+
+    <!-- chown for webroot -->
+    <if>
+      <equals arg1="${user.name}" arg2="root" />
+      <then>
+        <foreach target="inactive_to-chown" list="${dir-log}" param="curdir" />
+      </then>
+    </if>
+
+    <!-- chmod -->
+    <antcall target="inactive_to-chmod">
+      <param name="curdir" value="${dir-log}" />
+    </antcall>
+
+    <!-- reset user and group using the basedir values when running as root -->
+    <if> 
+      <equals arg1="${user.name}" arg2="root" />
+      <then>
+        <chown owner="${user-basedir}">
+          <fileset dir="${dir-src}" casesensitive="yes">
+            <include name="**/*" />
+          </fileset>
+        </chown>
+        <chgrp group="${group-basedir}">
+          <fileset dir="${dir-src}" casesensitive="yes">
+            <include name="**/*" />
+          </fileset>
+        </chgrp>
+      </then>
+    </if>  
+  </target>
+
+  <!-- ########################################################## -->
+  <!-- NOTE: the following targets need to be adjusted whenever
+             you want to replace some placeholders in configuration
+             or source files (.php) -->
+
+  <!-- NOTE: use this target to replace config placeholders 
+             call this target with the configuration file to be
+             modified as parameter -->
+  <target name="inactive_to-replace-config-values">
+    <echo message="Replacing config values in ${rfile}" />
+    <!-- phpunit -->    
+    <replace file="${rfile}" token="@confvalue-phpunit-indir@" value="${confvalue-phpunit-indir}" />
+    <replace file="${rfile}" token="@phpunit-log-dir@" value="${phpunit-log-dir}" />
+    <replace file="${rfile}" token="@confdir-phpunit@" value="${confdir-phpunit}" />
+    <!-- doxygen -->
+    <replace file="${rfile}" token="@confvalue-doxygen-pjname@" value="${confvalue-doxygen-pjname}" />
+    <replace file="${rfile}" token="@confvalue-doxygen-outdir@" value="${confvalue-doxygen-outdir}" />
+    <!-- core -->
+    <replace file="${rfile}" token="@php-dir-include@" value="${dir-src}" />
+    <replace file="${rfile}" token="@dir-log-file@" value="${dir-log-file}" />
+    <replace file="${rfile}" token="@dir-log-php-error-file@" value="${dir-log-php-error-file}" />
+    <replace file="${rfile}" token="@dir-log-xdebug@" value="${dir-log-xdebug}" />
+  </target>
+
+  <!-- NOTE: use this target to restore placeholders
+             call this target with the file to be
+             modified as parameter -->
+  <!-- NOTE: watch out for the order as short values 
+             will be replaced in long one, longest first -->
+  <target name="inactive_to-restore-config-values">
+    <echo message="Restoring config values in ${rfile}" />
+    <replace file="${rfile}" token="${confdir-phpunit}" value="@confdir-phpunit@" />
+    <replace file="${rfile}" token="${phpunit-log-dir}" value="@phpunit-log-dir@" />
+    <replace file="${rfile}" token="${dir-log-xdebug}" value="@dir-log-xdebug@" />
+    <replace file="${rfile}" token="${confvalue-doxygen-outdir}" value="@confvalue-doxygen-outdir@" />
+    <replace file="${rfile}" token="${confvalue-phpunit-indir}" value="@confvalue-phpunit-indir@" />
+    <replace file="${rfile}" token="${dir-log-file}" value="@dir-log-file@" />
+    <replace file="${rfile}" token="${dir-log-php-error-file}" value="@dir-log-php-error-file@" />
+    <replace file="${rfile}" token="${dir-src}" value="@php-dir-include@" />
+    <replace file="${rfile}" token="${confvalue-doxygen-pjname}" value="@confvalue-doxygen-pjname@" />
+  </target>
+
+</project>

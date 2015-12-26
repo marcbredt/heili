@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# change to script directory for relative pathes
+cd ${0%/*}
+
+IMAGE_WINDOW="root"
+IMAGE_GEOMETRY="700x700+280+125"
+IMAGE_FILE_NAME="$(pwd)/crop.jpg"
+
+# make a cropped screen image
+/usr/bin/import -window "${IMAGE_WINDOW}" -crop "${IMAGE_GEOMETRY}" "${IMAGE_FILE_NAME}"
+
+# sed target file
+/bin/sed -ri 's:(<binfile.*>).*(</binfile>):\1'${IMAGE_FILE_NAME}'\2:' prnt.sc/headers.prntsc.xml
+
+# and upload it to prnt.sc
+../../hinject prnt.sc/scenarios.prntsc.xml prnt.sc/headers.prntsc.xml > ../log/screencropupload.log
+

@@ -1,0 +1,19 @@
+<?xml version="1.0" standalone="no" ?>
+<root>
+  <!-- A comment to throw an UnresolvedXPathExpression -->
+  <modules>
+    <module type="class" class="AccessibleObjectImpl" context="rcontext">
+      <class>Some DOMText</class>
+      <methods>
+        <method name="__construct" nparam="1">
+          <param name="p" value="regex:[a-z]*" />
+        </method>
+        <method name="dome" nparam="2">
+          <param name="p" value="regex:[a-z]*" />
+          <param name="q" value="class:module\language\Language" />
+        </method>
+      </methods>
+    </module>
+  </modules>
+
+</root>
