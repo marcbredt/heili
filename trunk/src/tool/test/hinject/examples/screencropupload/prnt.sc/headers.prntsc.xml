@@ -8,7 +8,11 @@
     <!-- globals will be stored as storeas^^ value if set 
          to be the same each time they are used  -->
     <boundary replace="%BOUNDARY%" storeas="boundary">---------------------------$(r=0; while [ $r -lt 29 ]; do ((r++)); echo -n $((${RANDOM}%10)); done)</boundary>
-    <binfile replace="%BINDATAFILE%">/home/marc/Development/projects/games/hinject/examples/crop.jpg</binfile>
+    <!-- 
+      created binfile for cropped screenimage can be reset using sed
+      e.g. see screencropupload main script
+    -->
+    <binfile replace="%BINDATAFILE%">crop.jpg</binfile>
   </global>
 
   <operations>
