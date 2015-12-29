@@ -99,3 +99,7 @@ $ export DEBFULLNAME="Marc Bredt"; export DEBEMAIL="marc.bredt@gmail.com"
 $ dch -c trunk/CHANGELOG --package kaese --distribution stable --create -v 0.0.2
 $ dch -c trunk/CHANGELOG -r
 $ dch -c trunk/CHANGELOG -i
+
+Metrics
+-------
+find -type f -not -path "./.git/*" -exec wc -l {} +
