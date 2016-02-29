@@ -33,7 +33,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
     // use another logfile for each FileLogger instace to avoid removal
     //   of lines in the global one
     $this->logger = new \core\util\log\FileLogger("LoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertNotNull($this->logger);
     $this->logger = NULL;
   }
@@ -44,7 +44,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerCreate() {
     $this->logger = new \core\util\log\FileLogger("LoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertNotNull($this->logger);
     $this->logger = NULL;
   }
@@ -55,7 +55,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerAccess() {
     $this->logger = new \core\util\log\FileLogger("LoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $l = $this->logger->getLogger();
     $this->assertNotNull($l);
     $this->logger = NULL;
@@ -67,7 +67,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerFormat() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertStringStartsNotWith(" ", $this->logger->__toString());
     $this->assertStringStartsNotWith("4w5zsdgs", $this->logger->__toString());
     $this->assertStringStartsWith("l.", $this->logger->__toString());
@@ -80,7 +80,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerFlatten() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertStringStartsWith("string", $this->logger->flatten("string"));
     $this->assertStringStartsWith("array", $this->logger->flatten(array()));
     $this->assertStringStartsWith("test\core\util\log\FileLoggerTest", $this->logger->flatten($this));
@@ -95,7 +95,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerFlattenDebug() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertStringStartsWith("OBJECT(", $this->logger->flatten("string", true));
     $this->assertStringStartsWith("OBJECT(", $this->logger->flatten(array(), true));
     $this->assertStringStartsWith("OBJECT(", $this->logger->flatten($this, true));
@@ -111,7 +111,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerLogging() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertFileNotExists($this->logger->getFile());
     $this->logger->logge("%",array($this));
     $this->assertFileExists($this->logger->getFile());
@@ -125,7 +125,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLogfileCleanage() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->assertFileExists($this->logger->getFile());
     $this->logger->clean();
     $this->assertStringEqualsFile($this->logger->getFile(),"");
@@ -138,7 +138,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testGetFirstLineFromLogfile() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->logger->clean();
     $line = $this->logger->getFirstLine();
     $this->assertEquals($line, "");    
@@ -155,7 +155,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testGetLastLineFromLogfile() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->logger->clean();
     $line = $this->logger->getLastLine();
     $this->assertEquals($line, "");    
@@ -173,7 +173,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testLoggerLoggingType() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->logger->clean();
     $this->logger->logge("%",array($this),"EMERG");
     $line = $this->logger->getLastLine();
@@ -221,7 +221,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testParamExceptionsThrown() {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     
     // ParamNotArrayException
     $this->logger->logge("A param log: %",$this);
@@ -241,7 +241,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
    */
   public function testParamExceptionsLogged() { 
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     
     // ParamNotArrayException
     try {
@@ -270,7 +270,7 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
   public function testLoggerDestroy() {
     // destructors will be called automatically if all references to an object got null'ed
     $this->logger = new \core\util\log\FileLogger("LoggerTest",
-                          "log/fileloggertest.log");
+                          "@dir-log@/fileloggertest.log");
     $this->logger = NULL;
     $this->assertNull($this->logger);
   }

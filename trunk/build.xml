@@ -20,13 +20,13 @@
   <property name="dir-src" value="${basedir}/src" />
   <property name="dir-src-core" value="${dir-src}/core" />
   <property name="dir-src-util" value="${dir-src}/util" />
-  <property name="dir-src-tool" value="${dir-src}/tool" />
-  <property name="dir-doc" value="${basedir}/doc" />
-  <property name="dir-log" value="${basedir}/log" />
+  <property name="dir-src-tool" value="${dir-src}/tools" />
+  <property name="dir-doc" value="${basedir}/../doc" />
+  <property name="dir-log" value="${basedir}/../log" />
   <property name="dir-log-file" value="${dir-log}/${pj-name}.log" />
   <property name="dir-log-xdebug" value="${dir-log}/xdebug" />
   <property name="dir-log-php-error-file" value="${dir-log}/php-error.log" />
-  <property name="dir-deploy" value="${basedir}/deploy" />
+  <property name="dir-deploy" value="${basedir}/../deploy" />
 
   <!-- target/deploy value -->
   <property name="exe-stat" location="/usr/bin/stat" />
@@ -106,7 +106,9 @@
         <exclude name="**/conf/doxygen/" />
         <exclude name="**/conf/phpunit/" />
         <exclude name="**/build/" />
-        <exclude name="**/test/" />
+        <exclude name="**/tests/" />
+        <exclude name="**/tools/" />
+        <exclude name="**/examples/" />
         <exclude name="*.swp" />
         <exclude name="**/*.swp" />
       </fileset>
@@ -400,6 +402,7 @@
     <!-- core -->
     <replace file="${rfile}" token="@php-dir-include@" value="${dir-src}" />
     <replace file="${rfile}" token="@dir-log-file@" value="${dir-log-file}" />
+    <replace file="${rfile}" token="@dir-log@" value="${dir-log}" />
     <replace file="${rfile}" token="@dir-log-php-error-file@" value="${dir-log-php-error-file}" />
     <replace file="${rfile}" token="@dir-log-xdebug@" value="${dir-log-xdebug}" />
   </target>
@@ -417,6 +420,7 @@
     <replace file="${rfile}" token="${confvalue-doxygen-outdir}" value="@confvalue-doxygen-outdir@" />
     <replace file="${rfile}" token="${confvalue-phpunit-indir}" value="@confvalue-phpunit-indir@" />
     <replace file="${rfile}" token="${dir-log-file}" value="@dir-log-file@" />
+    <replace file="${rfile}" token="${dir-log}" value="@dir-log@" />
     <replace file="${rfile}" token="${dir-log-php-error-file}" value="@dir-log-php-error-file@" />
     <replace file="${rfile}" token="${dir-src}" value="@php-dir-include@" />
     <replace file="${rfile}" token="${confvalue-doxygen-pjname}" value="@confvalue-doxygen-pjname@" />

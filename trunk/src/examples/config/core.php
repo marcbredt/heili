@@ -1,6 +1,6 @@
 <?php
   
-  require_once("core/autoloader.class.php");
+  require_once("../../core/autoloader.class.php");
   // load the autoloader manually after suffix expansion for files in 
   // the include path like 'Log.php'
   $al = new core\AutoLoader(false);
@@ -12,8 +12,8 @@
   $fl->logge("%",array($fl));
 
   try {
-    $xd = new core\util\xml\XMLDocument("conf/xml/core/php-init.xml",
-                                        "conf/dtd/core/php-init.dtd");
+    $xd = new core\util\xml\XMLDocument("../../conf/xml/core/php-init.xml",
+                                        "../../conf/dtd/core/php-init.dtd");
     $fl->logge("%",array($xd));
   } catch(core\exception\xml\XMLNotValidException $xnve) {
     echo "Exception: core\exception\xml\XMLNotValidException catched!<br />";

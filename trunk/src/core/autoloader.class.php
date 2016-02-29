@@ -1,7 +1,6 @@
 <?php
 
 namespace core;
-//use \core\object\IdentifiableObject as IdentifiableObject;
 use \core\AutoLoadingDevisor as AutoLoadingDevisor;
 use \ReflectionFunction as ReflectionFunction;
 
@@ -13,7 +12,6 @@ use \ReflectionFunction as ReflectionFunction;
  * follows the directory structure.
  * @author Marc Bredt
  */
-//class AutoLoader extends IdentifiableObject {
 class AutoLoader { 
 
   /**
