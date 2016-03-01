@@ -1,7 +1,8 @@
 <?php
 
 namespace core\object;
-use \core\util\log\FileLogger as FileLogger;
+use \Serializable as Serializable;
+use core\util\log\FileLogger as FileLogger;
 
 /**
  * This class provides general serialization methods.
@@ -10,6 +11,7 @@ use \core\util\log\FileLogger as FileLogger;
  * @author Marc Bredt
  * @see ConfigurationManager
  * @see Serializable
+ * @req PHP >= 5.1.0, interface Serializable
  */
 class SerializableObject implements Serializable {
 
@@ -17,9 +19,8 @@ class SerializableObject implements Serializable {
    * Serialize the object passed during initialization.
    * @return serialized object
    */
-  public function serialize() { 
-    $this->sobj = serialize($this->dobj); 
-    return $this->sobj; 
+  public function serialize($obj = null) { 
+    return serialize($this->dobj); 
   }
 
   /**
@@ -28,7 +29,7 @@ class SerializableObject implements Serializable {
    * @param $sobj serialized object representation
    */
   public function unserialize($sobj = null) { 
-    $this->dobj = unserialize($sobj); 
+    return unserialize($sobj); 
   }
 
   /**
@@ -38,7 +39,7 @@ class SerializableObject implements Serializable {
    * @return array with attributes of the calling or extending class
    * @see ReflectionClass
    * @see ReflectionProperty 
-   * @req PHP >= 5
+   * @req PHP >= 5, ReflectionClass, ReflectionProperty
    */
   public function __sleep() {
 

@@ -19,7 +19,6 @@
 
   <property name="dir-src" value="${basedir}/src" />
   <property name="dir-src-core" value="${dir-src}/core" />
-  <property name="dir-src-util" value="${dir-src}/util" />
   <property name="dir-src-tool" value="${dir-src}/tools" />
   <property name="dir-doc" value="${basedir}/../doc" />
   <property name="dir-log" value="${basedir}/../log" />
@@ -45,8 +44,9 @@
   <property name="rights-dir-deploy" value="0770" />
   <property name="rights-file-deploy" value="0660" />
 
-  <!-- xmllint -->
+  <!-- xml stuff -->
   <property name="exe-xmllint" location="/usr/bin/xmllint" />
+  <property name="exe-xmlstarlet-format" location="${dir-src-tool}/build/xmlstarlet-format" />
 
   <!-- doxygen -->
   <property name="exe-doxygen" location="/usr/bin/doxygen" />
@@ -62,7 +62,7 @@
   <property name="exe-phpunit-getsuites" location="${dir-src-tool}/build/phpunit-getsuites" />
   <property name="confdir-phpunit" location="${dir-src}/conf/phpunit" />
   <property name="conf-phpunit" location="${confdir-phpunit}/phpunit.xml" />
-  <property name="confvalue-phpunit-indir" location="${dir-src}/test" />
+  <property name="confvalue-phpunit-indir" location="${dir-src}/tests" />
   <property name="phpunit-log-dir" location="${dir-log}/phpunit" />
 
   <!-- for bash executions -->
@@ -108,7 +108,8 @@
         <exclude name="**/build/" />
         <exclude name="**/tests/" />
         <exclude name="**/tools/" />
-        <exclude name="**/examples/" />
+        <!-- this folder should be excluded on productive systems -->
+        <!--<exclude name="**/examples/" />-->
         <exclude name="*.swp" />
         <exclude name="**/*.swp" />
       </fileset>
@@ -325,6 +326,14 @@
       <sequential>
         <echo />
         <echo message="Processing testsuite: ">@{phpunit-testsuite-value}</echo>
+        <echo />
+        <echo message="Using the followng PHPUnit configuration:" />
+        <exec executable="${exe-xmlstarlet-format}" failonerror="false">
+          <arg value="${conf-phpunit}" />
+        </exec>
+        <echo />
+        <echo message="Running: ${exe-phpunit} --verbose --strict --no-globals-backup -c ${conf-phpunit} --testsuite @{phpunit-testsuite-value}" />
+        <echo />
         <!-- do not fail on errors to reset the preamble -->
         <exec executable="${exe-phpunit}" failonerror="false"> 
           <!--<arg value="-debug" />-->

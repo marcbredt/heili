@@ -3,7 +3,8 @@
 <phpunit colors="true" verbose="true" 
          stopOnError="false" stopOnFailure="false" 
          bootstrap="@confdir-phpunit@/autoloader.inc.php"
-         timeoutForSmallTests="3" timeoutForMediumTests="10" timeoutForLargeTests="60">
+         timeoutForSmallTests="3" timeoutForMediumTests="10" 
+         timeoutForLargeTests="60">
 
   <!-- TESTSUITES -->
   <testsuites>
@@ -37,7 +38,7 @@
 
   <!-- FILTER -->
   <!-- NOTE: exclude some files for calculating coverage in testsuite(s) above
-             e.g. exclude autoloader.class.php as it primarly used to bootstrap 
+             e.g. exclude autoloader.class.php as it primarly is used to bootstrap 
                test those classes separately -->
   <!--
   <filter>
@@ -46,7 +47,7 @@
                processUncoveredFilesFromWhitelist="false">
       <directory suffix=".php">@confvalue-phpunit-indir@</directory>
       <exclude>
-        <file>@confvalue-phpunit-indir@/core/autoloader.class.php</file>
+        <file>@confdir-phpunit@/autoloader.class.php</file>
       </exclude>
     </whitelist>
   </filter>

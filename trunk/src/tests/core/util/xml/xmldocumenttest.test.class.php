@@ -28,8 +28,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     // if one wants to access a namespace outside of the class'
     // namespace it need to be prepended with '\' 
     $this->xd = new \core\util\xml\XMLDocument(
-                      "src/test/core/util/xml/files/xml/module-register.xml",
-                      "src/test/core/util/xml/files/dtd/module-register.dtd");
+                      "src/tests/core/util/xml/files/xml/module-register.xml",
+                      "src/tests/core/util/xml/files/dtd/module-register.dtd");
     $this->assertNotNull($this->xd);
     $this->xd = NULL;
   }
@@ -39,8 +39,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
    */
   public function testDocument() {
     $this->xd = new \core\util\xml\XMLDocument(
-                      "src/test/core/util/xml/files/xml/module-register.xml",
-                      "src/test/core/util/xml/files/dtd/module-register.dtd");
+                      "src/tests/core/util/xml/files/xml/module-register.xml",
+                      "src/tests/core/util/xml/files/dtd/module-register.dtd");
     $this->assertNotNull($this->xd);
     $this->assertNotNull($this->xd->getDocument());
     $this->assertInstanceOf('DOMDocument',$this->xd->getDocument());
@@ -52,8 +52,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
    */
   public function testStringRepresentation() {
     $this->xd = new \core\util\xml\XMLDocument(
-                      "src/test/core/util/xml/files/xml/module-register.xml",
-                      "src/test/core/util/xml/files/dtd/module-register.dtd");
+                      "src/tests/core/util/xml/files/xml/module-register.xml",
+                      "src/tests/core/util/xml/files/dtd/module-register.dtd");
     $this->assertNotEquals("",$this->xd->__toString());
     $this->assertStringStartsWith("<?xml ",$this->xd->__toString());
     $this->xd = NULL;
@@ -64,8 +64,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
    */
   public function testDOMDocumentString() {
     $this->xd = new \core\util\xml\XMLDocument(
-                      "src/test/core/util/xml/files/xml/module-register.xml",
-                      "src/test/core/util/xml/files/dtd/module-register.dtd");
+                      "src/tests/core/util/xml/files/xml/module-register.xml",
+                      "src/tests/core/util/xml/files/dtd/module-register.dtd");
     $this->assertEquals("",$this->xd->getDocumentString(null));
     $this->assertEquals("",$this->xd->getDocumentString(""));
     $this->assertEquals("",$this->xd->getDocumentString(array()));
@@ -84,8 +84,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
    */
   public function testXPathEvaluations() {
     $this->xd = new \core\util\xml\XMLDocument(
-                      "src/test/core/util/xml/files/xml/module-register.xml",
-                      "src/test/core/util/xml/files/dtd/module-register.dtd");
+                      "src/tests/core/util/xml/files/xml/module-register.xml",
+                      "src/tests/core/util/xml/files/dtd/module-register.dtd");
 
     // DOMElement
     $this->assertStringStartsWith("<module",$this->xd->xpath("//module"));
@@ -141,7 +141,7 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     fseek($tfh,0);
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        $tf,"src/test/core/util/xml/files/dtd/module-register.dtd");
+                        $tf,"src/tests/core/util/xml/files/dtd/module-register.dtd");
     } catch(\core\exception\xml\XMLNotValidException $xnve) { $catched = true; }
     $this->xd = null;
     fclose($tfh);
@@ -157,7 +157,7 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     try {
       $this->xd = new \core\util\xml\XMLDocument(
                         null,
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
     } catch(\core\exception\xml\XMLNotValidException $xnve) { $catched = true; }
     $this->xd = null;
     if(!$catched) { // fail after temp file cleanage
@@ -170,9 +170,9 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/".
+                        "src/tests/core/util/xml/files/xml/".
                         bin2hex(mcrypt_create_iv(32,MCRYPT_DEV_URANDOM)).".xml",
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
     } catch(\core\exception\xml\XMLNotValidException $xnve) { $catched = true; }
     $this->xd = null;
     if(!$catched) { // fail after temp file cleanage
@@ -189,7 +189,7 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     fseek($tfh,0);
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
                         $tf);
     } catch(\core\exception\xml\XMLNotValidException $xnve) { $catched = true; }
     $this->xd = null;
@@ -206,8 +206,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
-                        "src/test/core/util/xml/files/dtd/".
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/dtd/".
                           bin2hex(mcrypt_create_iv(32,MCRYPT_DEV_URANDOM)).".dtd");
     } catch(\core\exception\xml\XMLNoValidDTDException $xnvde) { $catched = true; }
     $this->xd = null;
@@ -222,8 +222,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
       $this->xd->xpath(null);
     } catch (\core\exception\xml\xpath\InvalidXPathExpressionException $ixee) { 
       $catched = true; }
@@ -238,8 +238,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
       $this->xd->xpath('');
     } catch (\core\exception\xml\xpath\InvalidXPathExpressionException $ixee) { 
       $catched = true; }
@@ -254,8 +254,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
       $this->xd->xpath(')');
     } catch (\core\exception\xml\xpath\InvalidXPathExpressionException $ixee) { 
       $catched = true; }
@@ -272,8 +272,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
       $this->xd->xpath('//comment()');
     } catch(\core\exception\xml\xpath\UnresolvedXPathException $uxe) { $catched = true; }
     $this->xd = NULL;
@@ -292,8 +292,8 @@ class XMLDocumentTest extends PHPUnit_Framework_TestCase {
     $catched = false;
     try {
       $this->xd = new \core\util\xml\XMLDocument(
-                        "src/test/core/util/xml/files/xml/module-register.xml",
-                        "src/test/core/util/xml/files/dtd/module-register.dtd");
+                        "src/tests/core/util/xml/files/xml/module-register.xml",
+                        "src/tests/core/util/xml/files/dtd/module-register.dtd");
       $this->xd->xpath("/",true);
     } catch(\core\exception\xml\xpath\UnresolvedXPathException $uxe) { $catched = true; }
     $this->xd = NULL;

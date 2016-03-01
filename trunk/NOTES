@@ -66,6 +66,10 @@ Conventions
 * test files
   * class file [Cc]lass[Nn]ame.class.php
   * corresponding testfile [Cc]lass[Nn]ame[Tt]est.test.class.php
+* logging
+  * extend LoggableObject to pin logging functionality onto objects
+    * avoids file handle and resource corruption upon (de)serialization
+  * use $this->logger to log messages
 
 Testing
 -------
@@ -87,19 +91,33 @@ Modules
 Notes on core loadings
 ----------------------
 * Session
-* Autoload 
+* Autoload - DONE
+  * namespace structure to load classes
 * Exception
+  * 
 * Configuration
+  * via shared memory management 
+    * as generated objects are not accessible anymore after script execution
+    * as script execution is followed by a garbage collector
 * Request
 * Protocol
 
 Modifying CHANGELOG
 -------------------
 $ export DEBFULLNAME="Marc Bredt"; export DEBEMAIL="marc.bredt@gmail.com"
-$ dch -c trunk/CHANGELOG --package kaese --distribution stable --create -v 0.0.2
+$ dch -c trunk/CHANGELOG --package heili --distribution stable --create -v 0.0.2
 $ dch -c trunk/CHANGELOG -r
 $ dch -c trunk/CHANGELOG -i
 
 Metrics
 -------
-find -type f -not -path "./.git/*" -exec wc -l {} +
+LOC: find -type f -not -path "./.git/*" -exec wc -l {} +
+
+Current tasks
+-------------
+* shm logger
+* shm exceptions
+* shm tests
+* shm manager
+* shm examples
+* other tests
