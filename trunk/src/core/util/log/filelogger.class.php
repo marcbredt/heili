@@ -185,7 +185,7 @@ class FileLogger extends Log {
    *                        for each % placeholder in $msg
    * @return string flattened/detailes object information for $obj
    */
-  public function logge($msg, $replaces = array(), $type = "INFO") {
+  public function logge($msg = "", $replaces = array(), $type = "INFO") {
 
     $toreps = preg_match_all("/%/", $msg);
  

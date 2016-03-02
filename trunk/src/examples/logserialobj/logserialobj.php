@@ -19,6 +19,7 @@ $fl->logge("%",array($fl));
 
 // create a loggable and serializeable object
 class Foo extends LoggableObject {
+  private $foo = "bar";
   public function __construct() {
     $this->log("Message from %", array(__FILE__));
     $this->log("Message from %", array(__CLASS__), "DEBUG");
@@ -26,5 +27,16 @@ class Foo extends LoggableObject {
 }
 $f = new Foo();
 
+// the getFile function can be only called directly if LoggableObject's
+// $logger is set via $f->logger->getFile()
+// to avoid any problems when $f->logger===null the interface Loggable
+// declares methods to the FileLogger which LoggableObject should wrap
+echo "check '".$f->getFile()."' for log messages written<br/>";
+
+// serialize it
+$serialized = $f->serialize();
+echo "'".$serialized."'<br/>";
+// and deserialize it
+echo "'".var_export($f->unserialize($serialized),true)."'<br/>";
 
 ?>

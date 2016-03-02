@@ -19,8 +19,8 @@ class SerializableObject implements Serializable {
    * Serialize the object passed during initialization.
    * @return serialized object
    */
-  public function serialize($obj = null) { 
-    return serialize($this->dobj); 
+  public function serialize() { 
+    return serialize($this); 
   }
 
   /**
@@ -28,8 +28,9 @@ class SerializableObject implements Serializable {
    * and stores it as <code>$dobj</code>
    * @param $sobj serialized object representation
    */
-  public function unserialize($sobj = null) { 
-    return unserialize($sobj); 
+  public function unserialize($sobj = "") { 
+    // TODO: check serialization layout, sth like 'type:length:"payload"'
+    return strncmp(gettype($sobj),"string",6)==0 ? unserialize($sobj) : ""; 
   }
 
   /**
