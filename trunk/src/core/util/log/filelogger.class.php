@@ -15,7 +15,7 @@ use \Log as Log;
  * @author Marc Bredt
  * @package Logger
  */
-class FileLogger extends Log {
+class FileLogger {
 
   /**
    * Stores the name of the class the logger is generated for.
@@ -48,6 +48,7 @@ class FileLogger extends Log {
     $this->class = $class;
     $this->conf = array('mode' => 0600, 'timeFormat' => '   %x %X');
     $this->logger = Log::singleton('file', $this->file, $class, $this->conf);
+
   }  
 
   /**
@@ -144,7 +145,7 @@ class FileLogger extends Log {
    * @param boolean $debug indicates to get detailed information for $obj
    * @return string flattened object, its string representation or a unique id
    */
-  public function flatten($obj, $debug = false) {
+  public function flatten($obj = null, $debug = false) {
     $a = array();
     // NOTE: get_class_methods invokes autoloader for a string value
     if(is_object($obj) 
@@ -156,7 +157,7 @@ class FileLogger extends Log {
     if(in_array("__toString", $a)) {
       $ret = $obj->__toString();
     } else if(strncmp(gettype($obj),"array",5)==0) {
-      $ret = preg_replace("/[\r\n]/", " ", var_export($obj, true));
+      $ret = preg_replace("/[\r\n]/", " ", print_r($obj, true));
     } else if(strncmp(gettype($obj),"string",6)==0) {
       $ret = $obj;
     } else if(is_null($obj)) {
@@ -165,7 +166,8 @@ class FileLogger extends Log {
       $ret = get_class($obj).spl_object_hash($obj); 
     }
 
-    if($debug) $ret = "OBJECT(".preg_replace("/[\r\n]/", "", print_r($obj, true)).")=".$ret;
+    if($debug===true) $ret = "OBJECT(".preg_replace("/[\r\n]/", "", 
+                                         print_r($obj, true)).")=".$ret;
   
     // replace multiple whitespaces by a single one 
     return preg_replace("/(\t| )+/"," ", $ret);
@@ -219,6 +221,6 @@ class FileLogger extends Log {
       }      
     } 
    
-    $this->logger->log(get_class($this)." ".$msg, constant("PEAR_LOG_".$type));
+    $this->getLogger()->log(get_class($this)." ".$msg, constant("PEAR_LOG_".$type));
   }
 }

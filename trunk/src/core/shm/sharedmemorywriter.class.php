@@ -3,8 +3,12 @@
 namespace core\shm;
 use core\util\string\StringUtil as StringUtil;
 use core\util\Writer as Writer;
+use core\object\LoggableObject as LoggableObject;
 use core\shm\SharedMemorySegment as SharedMemorySegment;
 use core\shm\SharedMemoryReader as SharedMemoryReader;
+use core\exception\shm\SegmentLayoutException as SegmentLayoutException;
+use core\exception\shm\SegmentSpaceException as SegmentSpaceException;
+use core\exception\shm\SegmentWriteException as SegmentWriteException;
 
 /**
  * This class implements the abstract class Writer which simply
@@ -12,7 +16,13 @@ use core\shm\SharedMemoryReader as SharedMemoryReader;
  * to implement by any writer.
  * @author Marc Bredt
  */
-class SharedMemoryWriter extends Writer {
+class SharedMemoryWriter extends LoggableObject implements Writer {
+
+  /** 
+   * Element to write to. For this writer it should be a shared memory segment.
+   * @see SharedMemorySegment
+   */
+  private $element = null;
 
   /**
    * Temporary built string for rewriting shared memory segment contents.
@@ -27,6 +37,7 @@ class SharedMemoryWriter extends Writer {
     if(strncmp(gettype($seg),"object",6)==0
        && strncmp(get_class($seg),"core\shm\SharedMemorySegment",26)==0) {
       $this->element = $seg;
+      $this->log(__METHOD__.": Creating writer for segment %.", array($this->element));
     } else {
       $this->element = null;
     }
@@ -58,15 +69,19 @@ class SharedMemoryWriter extends Writer {
         if($k==(count($values)-1)) $pstr = $pstr.$l.serialize($v).$r.$d;
         else $pstr = $pstr.$l.$v.$r;
       }
-      echo "I: SMW: pstr=".$pstr.", key=".$key."\n";
+      $this->log(__METHOD__.": pstr=%, key=%", array($pstr, $key));
 
       // check it against the memory layout first 
       $has_layout = false;
       if(!StringUtil::has_layout($this->element->get_shm_seg_layout(),
                                  $pstr)) {
-        echo "E: SharedMemorySegmentLayoutException: ".
-             "Data does not fit segment layout.\n";
-        //throw(new SharedMemorySegmentLayoutException());
+        $this->log(__METHOD__.": %", array(new SegmentLayoutException(
+                     "layout=".$this->element->get_shm_seg_layout().
+                     ", data=".$pstr)));
+        throw(new SegmentLayoutException(
+                "layout=".$this->element->get_shm_seg_layout().
+                ", data=".$pstr));
+
       } else {
         $has_layout = true;
       }
@@ -86,10 +101,10 @@ class SharedMemoryWriter extends Writer {
       $this->telement = "";
 
       
-      echo "I: slen=".$seglen.", len=".strlen($smr->read()).
-           ", type=".gettype($smr->read()).
-           ", cws=".preg_replace("/[\r\n]/", " ", 
-                                 var_export(count_chars($smr->read()),true))."\n";
+      $this->log(__METHOD__.": slen=%, len=%, type=%, cws=%", 
+                 array($seglen, strlen($smr->read()), gettype($smr->read()),
+                       preg_replace("/[\t ]+/", " ", preg_replace("/[\r\n]/", " ", 
+                         var_export(count_chars($smr->read()),true)))));
 
       // get the offset for simply appending
       if($key==-1) {
@@ -128,9 +143,10 @@ class SharedMemoryWriter extends Writer {
 
           // otherwise there is something wrong with the space
           } else {
-            echo "E: SegmentFreeingSpaceException";
-            //throw(new SegmentFreeingSpaceException());
             $has_space = false;
+            $this->log(__METHOD__.": %", 
+                       array(new SegmentSpaceException("freeing failed")));
+            throw(new SegmentSpaceException("freeing failed"));
 
           }
 
@@ -145,8 +161,10 @@ class SharedMemoryWriter extends Writer {
             $has_space = true;
           
           } else {
-            echo "E: NoMoreSegmentSpaceException";
-            //throw(new NoMoreSegmentSpaceException());
+            $this->log(__METHOD__.": %", 
+                       array(new SegmentSpaceException("no more space", 1)));
+            throw(new SegmentSpaceException("no more space", 1));
+
           } 
         }
 
@@ -214,21 +232,23 @@ class SharedMemoryWriter extends Writer {
               $has_space = true;
 
             } else {
-              echo "E: NoMoreSegmentSpaceException\n";
-              //throw(new NoMoreSegmentSpaceException());
+              $has_space = false;
+              $this->log(__METHOD__.": %", 
+                         array(new SegmentSpaceException("no more space", 1)));
+              throw(new SegmentSpaceException("no more space", 1));
+
             } 
                     
           }
 
         } 
           
-        // TODO: pad with spaces to override the rest of the old segment 
-        //       if $pstr povided creates a shorter segment string
-        //       this avoids corrupting the segment layout
-
       } else {
-        echo "E: ParamNotValidException";
-        // throw(new ParamNotValidException());
+        $this->log(__METHOD__.": %", array(new ParamNotValidException(
+                     __METHOD__.": key(int)=".var_export($key,true))));
+        throw(new ParamNotValidException(
+                __METHOD__.": key(int)=".var_export($key,true))."\n");
+
       }
 
       // write it using shmop_write
@@ -238,12 +258,12 @@ class SharedMemoryWriter extends Writer {
         // TODO: WriterThread to allow multiple writes on different 
         //       but "correctly calced" locations/offsets     
 
-        echo "I: tel=".$this->telement.", tels=".strlen($this->telement).
-                 ", pstr=".$pstr.", pstrs=".strlen($pstr).
-                 ", els=".$this->element->get_shm_seg_size().", woffset=".$woffset.
-                 ", woff+lpstr=".($woffset+strlen($pstr)).
-                 ", segs-(woff+lpstr)=".($this->element->get_shm_seg_size()
-                                          -($woffset+strlen($pstr)))."\n";
+        $this->log(__METHOD__.": tel=%, tels=%, pstr=%, pstrs=%, els=%, ".
+                     "woff=%, woff+lpstr=%, segs-(woff+lpstr)=%",
+                   array($this->telement, strlen($this->telement),
+                         $pstr, strlen($pstr), $this->element->get_shm_seg_size(),
+                         $woffset, ($woffset+strlen($pstr)),
+                         ($this->element->get_shm_seg_size()-($woffset+strlen($pstr)))));
 
         // write modified prefix
         $written_prefix = shmop_write($this->element->get_shm_seg_id(),
@@ -254,18 +274,20 @@ class SharedMemoryWriter extends Writer {
                                $pstr, $woffset);
 
         // write additional entry from offset 
-        // TODO: only write flush for overlapping bytes at reduction
+        // TODO: only write flush/whitespace pad for overlapping bytes at reduction
         $written_flush = shmop_write($this->element->get_shm_seg_id(),
                                str_pad("",$this->element->get_shm_seg_size()
                                                -($woffset+strlen($pstr))," "), 
                                $woffset+strlen($pstr));
  
-        echo "I: wp='".$written_prefix."', wd='".$written_data.
-             "', wf='".$written_flush."'\n";
+        $this->log(__METHOD__.": wp=%, wd=%, wf=%", 
+                   array($written_prefix, $written_data, $written_flush));
+
         if($written_prefix===false || $written_data===false 
            || $written_flush===false){
-          echo "E: SharedMemoryWriteException\n";
-          //throw(new SharedMemoryWriteException());
+          $this->log(__METHOD__."%", array(new SegmentWriteException($this->element)));
+          throw(new SegmentWriteException($this->element));
+
         }
 
       }

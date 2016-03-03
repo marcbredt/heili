@@ -1,6 +1,6 @@
 <?php
 
-namespace examples;
+namespace examples\logserial;
 use core\AutoLoader as AutoLoader;
 use core\util\log\FileLogger as FileLogger;
 use core\object\LoggableObject as LoggableObject;
@@ -8,12 +8,12 @@ use core\object\LoggableObject as LoggableObject;
 // load the autoloader manually after suffix expansion for files in 
 // the include path like 'Log.php'
 require_once("../../core/autoloader.class.php");
-$al = new AutoLoader(false,"../../");
+$al = new AutoLoader(false,"../..");
 $al->expand(".test.class.php,.interface.php,.php");
 $al->load();
 
 // create a filelogger for this example
-$fl = new FileLogger("index.php");
+$fl = new FileLogger("logserial.php");
 $fl->logge("%",array($al));
 $fl->logge("%",array($fl));
 

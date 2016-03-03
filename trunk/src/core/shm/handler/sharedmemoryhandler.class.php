@@ -1,18 +1,24 @@
 <?php
 
 namespace core\shm\handler;
+use core\object\LoggableObject as LoggableObject;
 use core\control\Semaphore as Semaphore;
 use core\control\handler\SemaphoreHandler as SemaphoreHandler;
 use core\shm\SharedMemorySegment as SharedMemorySegment;
 use core\shm\SharedMemoryReader as SharedMemoryReader;
 use core\shm\SharedMemoryWriter as SharedMemoryWriter;
+use core\exception\shm\InvalidAccessTypeException as InvalidAccessTypeException;
+use core\exception\shm\AcquisitionFailedException as AcquisitionFailedException;
+use core\exception\shm\ParamNotValidException as ParamNotValidException;
+use core\exception\shm\ReadAccessException as ReadAccessException;
+use core\exception\shm\WriteAccessException as WriteAccessException;
 
 /**
  * This class is used to create/access/manage shared memory segments
  * via semaphore functions.
  * @author Marc Bredt
  */
-class SharedMemoryHandler {
+class SharedMemoryHandler extends LoggableObject {
 
   /**
    * Shared memory segment.
@@ -43,7 +49,7 @@ class SharedMemoryHandler {
                          $pid_seg = "0", 
                          $pid_sem_read = "a", $pid_sem_write = "A", 
                          $ac_read_timeout = 60, $ac_write_timeout = 60) {
-    
+ 
     // setup the read and write semaphores
     $sem_read = $this->create_semaphore($pid_sem_read, $sem_access_type,
                                                $read_limit, $ac_read_timeout);
@@ -427,30 +433,31 @@ class SharedMemoryHandler {
 
       // NOTE: NULL==0 is true, NULL===0 checks type too
       if($this->get_shm_seg()->get_shm_seg_access_type()===0) {
-        echo "I: Attached (ro).\n";
+        $this->log(__METHOD__.": Attached (ro) to %.", array($this->get_shm_seg()));
         $aid = shmop_open($this->get_shm_seg()->get_shm_seg_key(),"a",0400,0);
         $this->get_shm_seg()->set_shm_seg_id($aid);
     
       // read and writeable, write only
       } else if($this->get_shm_seg()->get_shm_seg_access_type()===1) {
-        echo "I: Attached (wo).\n";
+        $this->log(__METHOD__.": Attached (wo) to %.", array($this->get_shm_seg()));
         $aid = shmop_open($this->get_shm_seg()->get_shm_seg_key(),"w",0200,0);
         $this->get_shm_seg()->set_shm_seg_id($aid);
 
       } else if($this->get_shm_seg()->get_shm_seg_access_type()===2) {
-        echo "I: Attached (rw).\n";
+        $this->log(__METHOD__.": Attached (rw) to %.", array($this->get_shm_seg()));
         $aid = shmop_open($this->get_shm_seg()->get_shm_seg_key(),"w",0600,0);
         $this->get_shm_seg()->set_shm_seg_id($aid);
     
-      // else 
       } else {
-        echo "E: InvalidAccessTypeException\n";
-        //throw InvalidAccessTypeException
+        $this->log(__METHOD__.": %", array(new InvalidAccessTypeException(
+                          $this->get_shm_seg()->get_shm_seg_access_type())));
+        throw(new InvalidAccessTypeException(
+                $this->get_shm_seg()->get_shm_seg_access_type()));
       }
 
     } else {
-      echo "E: Acquisition failed.\n"; 
-      //throw AquisitionFailedException
+      $this->log(__METHOD__.": %", array(new AcquisitionFailedException($this->get_shm_seg())));
+      throw(new AquisitionFailedException($this->get_shm_seg()));
 
     }
      
@@ -546,12 +553,12 @@ class SharedMemoryHandler {
     if($this->get_shm_seg()->get_shm_seg_access_type()===2
        || $this->get_shm_seg()->get_shm_seg_access_type()===3) {
       $shm_writer = new SharedMemoryWriter($this->get_shm_seg());
-      echo "I: ".$shm_writer."\n";
+      $this->log(__METHOD__.": %",array($shm_writer));
       $success = ($shm_writer->write($values,$key)>0);
 
     } else {
-      echo "E: WriteAccessException\n"; 
-      //throw(new WriteAccessException()); 
+      $this->log(__METHOD__.": %", array(new WriteAccessException($this->get_shm_seg())));
+      throw(new WriteAccessException($this->get_shm_seg()));
 
     }
 
@@ -603,7 +610,7 @@ class SharedMemoryHandler {
 
       // try to read the element 
       $shm_reader = new SharedMemoryReader($this->get_shm_seg());
-      echo "I: ".$shm_reader."\n";
+      $this->log(__METHOD__.": %", array($shm_reader));
       if(strncmp(gettype($index),"integer",7)==0
          && strncmp(gettype($skey),"string",6)==0
          && strncmp(gettype($pos),"integer",7)==0
@@ -612,13 +619,23 @@ class SharedMemoryHandler {
         $found = $shm_reader->read($index,$skey,$pos,$val,$full);
 
       } else {
-        echo "E: ParamNotValidException\n";
-        //throw(new ParamNotValidExcepton());
+        $this->log(__METHOD__.": %", array(new ParamNotValidException(__CLASS__."::get()".
+                     ": index(int)=".var_export($index,true).
+                     ", skey(string)=".var_export($skey,true).
+                     ", pos(int)=".var_export($pos,true).
+                     ", val(any)=".var_export($val,true).
+                     ", full(bool)=".var_export($full))));
+        throw(new ParamNotValidExcepton(__CLASS__."::get()".
+                     ": index(int)=".var_export($index,true).
+                     ", skey(string)=".var_export($skey,true).
+                     ", pos(int)=".var_export($pos,true).
+                     ", val(any)=".var_export($val,true).
+                     ", full(bool)=".var_export($full)));
       }
  
     } else {
-        echo "E: ReadAccessException\n";
-        //throw(new ReadAccessExcepton());
+        $this->log(__METHOD__.": %", array(new ReadAccessException($this->get_shm_seg())));
+        throw(new ReadAccessExcepton($this->get_shm_seg()));
 
     }
 

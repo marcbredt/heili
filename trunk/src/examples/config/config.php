@@ -1,6 +1,6 @@
 <?php
  
-  namespace examples;
+  namespace examples\examples;
   use core\AutoLoader as AutoLoader;
   use core\util\log\FileLogger as FileLogger;
   use core\util\xml\XMLDocument as XMLDocument;
@@ -9,7 +9,7 @@
   // load the autoloader manually after suffix expansion for files in 
   // the include path like 'Log.php'
   require_once("../../core/autoloader.class.php");
-  $al = new AutoLoader(false,"../../");
+  $al = new AutoLoader(false,"../..");
   $al->expand(".test.class.php,.interface.php,.php");
   $al->load();
 

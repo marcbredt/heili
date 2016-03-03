@@ -10,7 +10,7 @@ use core\util\log\FileLogger as FileLogger;
  * without pinning extra logger attributes onto an object. Additionally
  * this class avoids errors upon serialization as file handles or other
  * resources of that kind are not serializeable. To enable logging
- * for objects which will probably be serialized this class implements 
+ * for objects which will probably be serialized this class probides 
  * the magic functions __sleep() and __wakeup() with respect to the 
  * caller.
  * @author Marc Bredt
@@ -19,6 +19,9 @@ use core\util\log\FileLogger as FileLogger;
  */
 class LoggableObject extends SerializableObject implements Loggable {
 
+  /**
+   * The FileLogger for any object that needs logging functionality.
+   */
   protected $logger = null;
 
   /**
@@ -30,36 +33,102 @@ class LoggableObject extends SerializableObject implements Loggable {
     //       directly from the extending class via parent::__construct()
 
     // setup the logger if that wasn't done before
-    if($this->logger===null)
+    if($this->logger==null) {
       $this->logger = new FileLogger(get_class($this));
+    }
   }
   
   /**
-   * This magic function gets called upon calling unavailable functions.
-   * As PHP does not know about multiple inheritation this method is
-   * used to invoke any logging funtionality by wrapping public functions
-   * of the FileLogger class.
-   * @param $fn function name of the unknown function
-   * @param $fa arguments passed on to $fn
-   * @return mixed values (e.g. void, string, ...) 
-   * @see FileLogger
-   */
-  public function log($msgstr = "", $msgargs = array(), $msgtype = "INFO") {
+   * Wraps FileLogger::getLogger().
+   * @return object Log 
+   */ 
+  public function getLogger() {
     // init
     $this->init(); 
-    // log it 
-    $this->logger->log($msgstr, $msgargs, $msgtype);
+    // get the logger
+    return $this->logger->getLogger();
   }
- 
+
   /**
    * Wraps FileLogger::getFile().
-   * @return location to the log file FileLogger currently uses.
+   * @return string representing the location to the log file the FileLogger 
+   *         currently uses.
    */ 
   public function getFile() {
     // init
     $this->init(); 
     // get the log file location
     return $this->logger->getFile();
+  }
+
+  /**
+   * Wraps FileLogger::clean().
+   */ 
+  public function clean() {
+    // init
+    $this->init(); 
+    // clean the log file location
+    return $this->logger->clean();
+  }
+
+  /**
+   * Wraps FileLogger::getFirstine().
+   * @return string representing the first line of the current log file 
+   */ 
+  public function getFirstLine() {
+    // init
+    $this->init(); 
+    // get the logger
+    return $this->logger->getFirstLine();
+  }
+
+  /**
+   * Wraps FileLogger::getLastLine().
+   * @return string representing the last line of the current log file 
+   */ 
+  public function getLastLine() {
+    // init
+    $this->init(); 
+    // get the logger
+    return $this->logger->getLastLine();
+  }
+
+  /**
+   * Wraps FileLogger::__toString().
+   * @return string representing the FileLogger object itself 
+   */ 
+  public function __toString() {
+    // init
+    $this->init(); 
+    // get the string representation of the FileLogger
+    return $this->logger->__toString();
+  }
+
+  /**
+   * Wraps FileLogger::flatten().
+   * @return string representing the FileLogger object itself 
+   */ 
+  public function flatten($o = null, $debug = false) {
+    // init
+    $this->init(); 
+    // get a string representation for the object passed
+    return $this->logger->flatten($o, $debug);
+  }
+
+  /**
+   * This function provides access to the main logging function of FileLogger.
+   * As PHP does not know about multiple inherits this method is
+   * used to invoke any logging funtionality by wrapping public functions
+   * of the FileLogger class.
+   * @param $fn function name of the unknown function
+   * @param $fa arguments passed on to $fn
+   * @see FileLogger
+   */
+  public function log($msgstr = "", $msgargs = array(), $msgtype = "INFO") {
+    // init
+    $this->init(); 
+    // log it 
+    $this->logger->logge($msgstr, $msgargs, $msgtype);
   }
 
 }

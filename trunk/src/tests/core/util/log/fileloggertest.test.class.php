@@ -82,7 +82,8 @@ class FileLoggerTest extends PHPUnit_Framework_TestCase {
     $this->logger = new \core\util\log\FileLogger("FileLoggerTest",
                           "@dir-log@/fileloggertest.log");
     $this->assertStringStartsWith("string", $this->logger->flatten("string"));
-    $this->assertStringStartsWith("array", $this->logger->flatten(array()));
+    $this->assertStringStartsWith("Array", $this->logger->flatten(array()));
+    $this->assertStringStartsWith("Array", $this->logger->flatten(array("eins")));
     $this->assertStringStartsWith("test\core\util\log\FileLoggerTest", $this->logger->flatten($this));
     $this->assertStringStartsWith("l.", $this->logger->flatten($this->logger));
     $this->assertStringStartsWith("NULL", $this->logger->flatten(null));
