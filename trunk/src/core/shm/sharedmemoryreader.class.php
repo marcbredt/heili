@@ -3,6 +3,10 @@
 namespace core\shm;
 use core\util\Reader as Reader;
 use core\util\string\StringUtil as StringUtil;
+use core\shm\LoggableObject as LoggableObject;
+use core\exception\ParamNotValidException as ParamNotValidException;
+use core\exception\shm\PayloadExtractionException as PayloadExtractionException;
+use core\exception\shm\DelimiterNotFoundException as DelimiterNotFoundException;
 
 /**
  * This class implements a shared memory reader reagarding the segment
@@ -10,7 +14,13 @@ use core\util\string\StringUtil as StringUtil;
  * @author Marc Bredt
  * @see SharedMemorySegment::set_shm_seg_layout()
  */
-class SharedMemoryReader extends Reader {
+class SharedMemoryReader extends LoggableObject implements Reader {
+
+  /** 
+   * Element which shoud be read, Could be anything like a file, stream,
+   * shared memory segment, etc.
+   */
+  private $element = null;
 
   /**
    * Supported search types.
@@ -59,9 +69,11 @@ class SharedMemoryReader extends Reader {
                        $skey = "", $kpos = -1, $val = null, $full = true) {
     
     $rs = "";
-    echo "I: idx=".$index.", skey=".$skey.", kpos=".$kpos.
-         ", val=".preg_replace("/[\r\n]/","",var_export($val,true)).
-         ", full='".$full."'\n";    
+    $this->log(__METHOD__.": idx=%, skey=%, kpos=%, val=%, full=%", 
+               array($index,$key,$kpos,
+                     preg_replace("/[\t ]+/"," ", 
+                       preg_replace("/[\r\n]/","",var_export($val,true))),
+                     $full));
  
     // reading the whole contents if index is not set and the upcoming
     // parameters either
@@ -166,8 +178,9 @@ class SharedMemoryReader extends Reader {
 
       $el = $this->get($entry);
       if(count($el)!=1) {
-        echo "E: PayloadExtractionException\n";
-        //throw(new PayloadExtractionException());
+        $this->log(__METHOD__.": %", 
+                   array(new PayloadExtractionException($this->element.", ".$el, 0)));
+        throw(new PayloadExtractionException($this->element.", ".$el, 0));
       }
       $el = $el[$entry]; // get the entry string
  
@@ -177,15 +190,17 @@ class SharedMemoryReader extends Reader {
       // the layout must be valid  
       if(!StringUtil::has_layout($this->element->get_shm_seg_layout(), 
                                  $entry)) {
-        echo "E: PayloadExtractionException\n";
-        //throw(new PayloadExtractionException());
+        $this->log(__METHOD__.": %", 
+                   array(new PayloadExtractionException($this->element.", ".$el, 1)));
+        throw(new PayloadExtractionException($this->element.", ".$el, 1));
 
       } 
       $el = $entry; // get the entry string
 
     } else {
-      echo "E: ParamNotValidException\n";
-      //throw(new ParamNotValidExcepton());
+      $this->log(__METHOD__.": %", 
+                 array(new ParamNotValidException("entry(int|string)=".gettype($entry))));
+      throw(new ParamNotValidExcepton("entry(int|string)=".gettype($entry)));
 
     }
 
@@ -280,8 +295,9 @@ class SharedMemoryReader extends Reader {
               }
 
             } else {
-              echo "E: DelimiterNotFoundException";
-              //throw(new DelimiterNotFoundException());
+              $this->log(__METHOD__.": %", 
+                         array(new DelimiterNotFoundException("'".$dl."', ".$sub)));
+              throw(new DelimiterNotFoundException("'".$dl."', ".$sub));
             }
 
           }
@@ -290,8 +306,16 @@ class SharedMemoryReader extends Reader {
         return "";
 
       } else {
-        echo "E: ParamNotValidException\n";
-        //throw(new ParamNotValidExcepton());
+        $this->log(__METHOD__.": %", 
+                   array(new ParamNotValidException(
+                           "index(int)=".gettype($index).
+                           ", skey(string)=".gettype($skey).
+                           ", kpos(int)=".gettype($kpos))));
+        throw(new ParamNotValidExcepton(
+                           "index(int)=".gettype($index).
+                           ", skey(string)=".gettype($skey).
+                           ", kpos(int)=".gettype($kpos)));
+
       } 
 
     } else if(strncmp(gettype($type),"string",6)==0
@@ -302,8 +326,11 @@ class SharedMemoryReader extends Reader {
       //       created avl object in a way restoring is not exhausting
 
     } else {
-      echo "E: ParamNotValidException\n";
-      //throw(new ParamNotValidExcepton());
+        $this->log(__METHOD__.": %", 
+                   array(new ParamNotValidException(
+                           "type(string)=".gettype($type))));
+        throw(new ParamNotValidExcepton(
+                "type(string)=".gettype($kpos)));
 
     }
 

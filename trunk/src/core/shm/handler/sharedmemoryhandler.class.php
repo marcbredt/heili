@@ -456,8 +456,9 @@ class SharedMemoryHandler extends LoggableObject {
       }
 
     } else {
-      $this->log(__METHOD__.": %", array(new AcquisitionFailedException($this->get_shm_seg())));
-      throw(new AquisitionFailedException($this->get_shm_seg()));
+      $this->log(__METHOD__.": %", 
+                 array(new AcquisitionFailedException($this->get_shm_seg())));
+      throw(new AcquisitionFailedException($this->get_shm_seg()));
 
     }
      

@@ -1,25 +1,25 @@
 <?php
 
-namespace core\exception\shm;
+namespace core\exception;
 use \Exception as Exception;
 
 /**
- * Class used to throw an exception in case a shared memory access is not
- * acquirable.
+ * Class used to throw an exception in case a delimiter for shared memory 
+ * segment entries is not available.
  * @author Marc Bredt
  */
-class AcquisitionFailedException extends Exception {
+class DelimiterNotFoundException extends Exception {
 
   /**
-   * Create an AcquisitionFailedException.
+   * Create a DelimiterNotFoundException.
    * @param $message additional message to be passed.
    * @param $code code to differentiate equal type of exceptions
    * @param $previous exception previously raised
    */
   public function __construct($message = "", 
                               $code = 0, Exception $previous = null) {
-    parent::__construct("Acquisition of shared memory segment failed (".$message.")",
-                        $code, $previous);
+    parent::__construct("Delimiter not found ("
+                          .$message.")", $code, $previous);
   }
 
   /**
