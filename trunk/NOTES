@@ -115,9 +115,14 @@ LOC: find -type f -not -path "./.git/*" -exec wc -l {} +
 
 Current tasks
 -------------
-* shm logger
-* shm exceptions
-* shm tests
+* shm access syncen (sem_*,shmop_*)
+  * SemaphoreHandler:acquire -> 0x4104822b, ipcs -> 0x4104822a
+* shm phpunit tests 
+  * handlers
+  * semaphores, managers
 * shm manager
 * shm examples
-* other tests
+  * semaphores
+  * manager
+* other (phpunit) tests
+

@@ -57,6 +57,7 @@ class AutoLoadingDevisor {
    * The second argument should just be set to true when running
    * tests on this function to cover all pathes, using e.g. phpunit.
    * @param $class classname passed
+   * @param $testing used to be able to check code pathes during unit tests 
    * @see https://bugs.php.net/bug.php?id=51991.
    */
   public function autoloadingfunction($class = "", $testing = false) {
@@ -145,8 +146,8 @@ class AutoLoadingDevisor {
     *                   replaced with directory delimiter, that makes class file  
     *                   namespaces need to follow the directory structure to be
     *                   found/includable
-    * @uses stream_resolve_include_path available since PHP >= 5.3.2 if local version fits
-    *         otherwise this fuction simply iterates over <code>get_include_path</code> 
+    * @req PHP >= 5.3.2, stream_resolve_include_path
+    *      otherwise <code>get_include_path</code> is used
     */
   private function isininc($class = "", 
                            $lowercase = NULL, $namespace = NULL, 

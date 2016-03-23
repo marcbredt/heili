@@ -3,8 +3,8 @@
 BASEPATH="${0%/*}"
 BUILDXML="${BASEPATH}/build.xml"
 XMLLINT="/usr/bin/xmllint"
-ECHO="/bin/echo"
-ANT=""
+ECHO="echo"
+ANT="/usr/bin/ant"
 
 INPUT="${1}"
 
@@ -48,4 +48,5 @@ ts=""
 if ! [ "${t}" = "" ]; then
   ts="$(${XMLLINT} --xpath 'string(//target[not(starts-with(@name,"inactive_"))]['"${t}"']/@name)' ${BUILDXML})"
 fi
-/usr/bin/ant -lib /usr/share/java/ant-contrib.jar -f ${BUILDXML} ${ts}
+${ANT} -lib /usr/share/java/ant-contrib.jar -buildfile ${BUILDXML} \
+                                            -silent ${ts}

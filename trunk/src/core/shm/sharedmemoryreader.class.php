@@ -3,7 +3,7 @@
 namespace core\shm;
 use core\util\Reader as Reader;
 use core\util\string\StringUtil as StringUtil;
-use core\shm\LoggableObject as LoggableObject;
+use core\object\LoggableObject as LoggableObject;
 use core\exception\ParamNotValidException as ParamNotValidException;
 use core\exception\shm\PayloadExtractionException as PayloadExtractionException;
 use core\exception\shm\DelimiterNotFoundException as DelimiterNotFoundException;
@@ -70,9 +70,7 @@ class SharedMemoryReader extends LoggableObject implements Reader {
     
     $rs = "";
     $this->log(__METHOD__.": idx=%, skey=%, kpos=%, val=%, full=%", 
-               array($index,$key,$kpos,
-                     preg_replace("/[\t ]+/"," ", 
-                       preg_replace("/[\r\n]/","",var_export($val,true))),
+               array($index,$skey,$kpos,StringUtil::get_object_string($val),
                      $full));
  
     // reading the whole contents if index is not set and the upcoming

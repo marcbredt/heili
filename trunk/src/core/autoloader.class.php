@@ -80,7 +80,7 @@ class AutoLoader {
    * @param $load set to false if the AutoLoader should not be 
    *              initialized on creation, default is true
    * @param $dir directory to search for classes.
-   * @param $extension default class filename extension.
+   * @param $extensions default class filename extension.
    */
   public function __construct($load = true, $dir = ".", $extensions = "") {
 
@@ -319,7 +319,7 @@ class AutoLoader {
   /**
    * Set the testing flag which is used to test the
    * auolading function. 
-   * @param boolean sets the testing state for this class
+   * @param $testing boolean sets the testing state for this class
    */
   public function sett($testing = false) {
     if(strncmp(gettype($testing),"boolean",7)==0)

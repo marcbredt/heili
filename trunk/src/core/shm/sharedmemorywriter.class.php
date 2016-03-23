@@ -6,9 +6,7 @@ use core\util\Writer as Writer;
 use core\object\LoggableObject as LoggableObject;
 use core\shm\SharedMemorySegment as SharedMemorySegment;
 use core\shm\SharedMemoryReader as SharedMemoryReader;
-use core\exception\shm\SegmentLayoutException as SegmentLayoutException;
-use core\exception\shm\SegmentSpaceException as SegmentSpaceException;
-use core\exception\shm\SegmentWriteException as SegmentWriteException;
+use core\exception\shm\SegmentException as SegmentException;
 
 /**
  * This class implements the abstract class Writer which simply
@@ -50,7 +48,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
    * for the segment.
    * @param $values array containing values
    * @param $key postion to write to. -1 means simply append.
-   * @throws SharedMemorySegmentLayoutException
+   * @throws SegmentException
    * @return number of bytes written.
    */
   public function write($values = array(), $key = -1) {
@@ -75,12 +73,12 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
       $has_layout = false;
       if(!StringUtil::has_layout($this->element->get_shm_seg_layout(),
                                  $pstr)) {
-        $this->log(__METHOD__.": %", array(new SegmentLayoutException(
+        $this->log(__METHOD__.": %", array(new SegmentException(
                      "layout=".$this->element->get_shm_seg_layout().
-                     ", data=".$pstr)));
-        throw(new SegmentLayoutException(
+                     ", data=".$pstr, 2)));
+        throw(new SegmentException(
                 "layout=".$this->element->get_shm_seg_layout().
-                ", data=".$pstr));
+                ", data=".$pstr, 2));
 
       } else {
         $has_layout = true;
@@ -145,8 +143,8 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
           } else {
             $has_space = false;
             $this->log(__METHOD__.": %", 
-                       array(new SegmentSpaceException("freeing failed")));
-            throw(new SegmentSpaceException("freeing failed"));
+                       array(new SegmentException("freeing failed",0)));
+            throw(new SegmentException("freeing failed",0));
 
           }
 
@@ -162,8 +160,8 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
           
           } else {
             $this->log(__METHOD__.": %", 
-                       array(new SegmentSpaceException("no more space", 1)));
-            throw(new SegmentSpaceException("no more space", 1));
+                       array(new SegmentException("no more space", 1)));
+            throw(new SegmentException("no more space", 1));
 
           } 
         }
@@ -234,8 +232,8 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
             } else {
               $has_space = false;
               $this->log(__METHOD__.": %", 
-                         array(new SegmentSpaceException("no more space", 1)));
-              throw(new SegmentSpaceException("no more space", 1));
+                         array(new SegmentException("no more space", 1)));
+              throw(new SegmentException("no more space", 1));
 
             } 
                     
@@ -285,8 +283,9 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
 
         if($written_prefix===false || $written_data===false 
            || $written_flush===false){
-          $this->log(__METHOD__."%", array(new SegmentWriteException($this->element)));
-          throw(new SegmentWriteException($this->element));
+          $this->log(__METHOD__."%", 
+                     array(new SegmentException($this->element,4)));
+          throw(new SegmentException($this->element,4));
 
         }
 

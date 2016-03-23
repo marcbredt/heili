@@ -9,7 +9,7 @@ use core\shm\handler\SharedMemoryHandler as SharedMemoryHandler;
  * which can be created through 
  * @author Marc Bredt
  */
-class SharedMemoryManager extends ManagableRegister {
+class SharedMemoryManager extends LoggableObject {
 
   /**
    * Processor architecture. Used to derive the maximum amount
@@ -129,11 +129,9 @@ class SharedMemoryManager extends ManagableRegister {
       $this->shm_key_max = pow(2,($parch-1))-1;
       $this->shm_key_min = -1 * $this->shm_key_max;
 
-      
-
     } else {
-      echo "E: ManagerException\n";
-      //throw(new ManagerException());
+      $this->log(__METHOD__.": %", array(new ManagerException()));
+      throw(new ManagerException());
 
     }
 

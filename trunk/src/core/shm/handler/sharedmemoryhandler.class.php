@@ -2,13 +2,16 @@
 
 namespace core\shm\handler;
 use core\object\LoggableObject as LoggableObject;
+use core\control\Timer as Timer;
 use core\control\Semaphore as Semaphore;
 use core\control\handler\SemaphoreHandler as SemaphoreHandler;
 use core\shm\SharedMemorySegment as SharedMemorySegment;
 use core\shm\SharedMemoryReader as SharedMemoryReader;
 use core\shm\SharedMemoryWriter as SharedMemoryWriter;
+use core\exception\TimerException as TimerException;
 use core\exception\shm\InvalidAccessTypeException as InvalidAccessTypeException;
-use core\exception\shm\AcquisitionFailedException as AcquisitionFailedException;
+use core\exception\shm\SemaphoreException as SemaphoreException;
+use core\exception\shm\SegmentException as SegmentException;
 use core\exception\shm\ParamNotValidException as ParamNotValidException;
 use core\exception\shm\ReadAccessException as ReadAccessException;
 use core\exception\shm\WriteAccessException as WriteAccessException;
@@ -390,7 +393,7 @@ class SharedMemoryHandler extends LoggableObject {
    *       itself). That could be useful for live debugging.
    * 
    * @throws InvalidAccessTypeException
-   * @throws AcquisitionFailedException
+   * @throws SemaphoreException
    * @return true if attaching successed, otherwise false
    *         the shared memory operational id can be gained
    *         from the segment itself
@@ -410,17 +413,17 @@ class SharedMemoryHandler extends LoggableObject {
 
     // acquire read semaphore
     $sh->load($sr);
-    $sr_ac = $sh->acquire(3);
+    $sr_ac = $sh->acquire();
     // acquire write semaphore
     $sh->load($sw);
-    $sw_ac = $sh->acquire(3);
+    $sw_ac = $sh->acquire();
 
     // if acquiring the semaphores was successful, try to create or open
     // the shared memory segment 
     $aid = -1;
     // reset any previously created attachment
     $this->get_shm_seg()->set_shm_seg_id($aid);
-    if($sr_ac && $sw_ac) {
+    if($sr_ac!==false && $sw_ac!==false) {
 
       // NOTE: access segments with different segment access types 
       //         regarding SharedMemorySegment::get_shm_seg_access_type()
@@ -433,19 +436,22 @@ class SharedMemoryHandler extends LoggableObject {
 
       // NOTE: NULL==0 is true, NULL===0 checks type too
       if($this->get_shm_seg()->get_shm_seg_access_type()===0) {
+        $aid = $this->open($this->get_shm_seg()->get_shm_seg_key(),
+                           "a", 0400, $this->get_shm_seg()->get_shm_seg_size(), 3);
         $this->log(__METHOD__.": Attached (ro) to %.", array($this->get_shm_seg()));
-        $aid = shmop_open($this->get_shm_seg()->get_shm_seg_key(),"a",0400,0);
         $this->get_shm_seg()->set_shm_seg_id($aid);
     
       // read and writeable, write only
       } else if($this->get_shm_seg()->get_shm_seg_access_type()===1) {
+        $aid = $this->open($this->get_shm_seg()->get_shm_seg_key(),
+                           "w", 0200, $this->get_shm_seg()->get_shm_seg_size(), 3);
         $this->log(__METHOD__.": Attached (wo) to %.", array($this->get_shm_seg()));
-        $aid = shmop_open($this->get_shm_seg()->get_shm_seg_key(),"w",0200,0);
         $this->get_shm_seg()->set_shm_seg_id($aid);
 
       } else if($this->get_shm_seg()->get_shm_seg_access_type()===2) {
+        $aid = $this->open($this->get_shm_seg()->get_shm_seg_key(),
+                           "w", 0600, $this->get_shm_seg()->get_shm_seg_size(), 3);
         $this->log(__METHOD__.": Attached (rw) to %.", array($this->get_shm_seg()));
-        $aid = shmop_open($this->get_shm_seg()->get_shm_seg_key(),"w",0600,0);
         $this->get_shm_seg()->set_shm_seg_id($aid);
     
       } else {
@@ -455,14 +461,67 @@ class SharedMemoryHandler extends LoggableObject {
                 $this->get_shm_seg()->get_shm_seg_access_type()));
       }
 
-    } else {
-      $this->log(__METHOD__.": %", 
-                 array(new AcquisitionFailedException($this->get_shm_seg())));
-      throw(new AcquisitionFailedException($this->get_shm_seg()));
-
     }
      
     return ($sr_ac && $sw_ac && $aid>-1); 
+  }
+
+  /**
+   * This function wraps shmop_open with a Timer and an amount of tries to capture
+   * shmop_open/release warnings which then would not provide further access to the
+   * shared memory segment. 
+   * Additionally using synchronized threads would require PECL pthreads >= 2.0.0,
+   * which we will not include to separate accesses from each other.
+   * @param $key segment key passed onto shmop_open
+   * @param $mode mode the segment should be opened with
+   * @param $perms the permissions for the segment
+   * @param $size the size of the segment
+   * @param $tries number of tries to attach before throwing an exception
+   * @param $timeout timeout in seconds for each try
+   * @return shared memory segment id
+   * @throws TimerException
+   * @throws SegmentException
+   * @bug 2016-00001 shmop_*, sem_* failures
+   * @see Timer
+   */
+  private function open($key = null, $mode = "w", $perms = 0600, $size = 1024,
+                        $timeout = 2, $tries = 3) {
+
+    // set and start the timer
+    $timer = null;
+    if(strncmp(gettype($timeout),"integer",7)==0
+       && $timeout>0) $timer = new Timer($timeout);
+    // run the timer
+    if($timer!==null) { 
+      $timer->start();
+    } else {
+      $this->log(__METHOD__.": %.", array(new TimerException("creation failed")));
+      throw(new TimerException("creation failed"));
+    }
+
+    // then try to attach to the segment
+    $sid = false;
+    $try = 1;
+    while($timer!==null && $key!==null && $sid===false && $try<=$tries) {
+      // try to create or attach to the segment
+      $sid = @shmop_open($key, $mode, $perms, $size);
+      if($timer->get()===0 && $timer->get_timed_out()) {
+        $this->log(__METHOD__.": Attaching segment. Try #%. Timer timed out.", 
+                   array($try));
+        $try++;
+        $timer->start();
+      }
+    }
+
+    // throw some exceptions if something failed
+    if($sid===false) {
+      $this->log(__METHOD__.": %", 
+                 array(new SegmentException("creation/attaching failed",5))); 
+      throw(new SegmentException("creation/attaching failed",5));
+    }
+
+    // otherwise return the shm segment id to access the segment
+    return $sid;
   }
 
   /**
@@ -724,7 +783,6 @@ class SharedMemoryHandler extends LoggableObject {
     return $this->get_shm_seg()->get_shm_seg_sem_write();
   }
 
-  /**
   /**
    * Get the semaphore currently bound to this handler.
    * Use this semaphore when asking for read access. The difference

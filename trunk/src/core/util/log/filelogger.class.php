@@ -9,6 +9,7 @@
  */
 namespace core\util\log;
 use \Log as Log;
+use core\util\string\StringUtil as StringUtil;
 
 /**
  * This class wraps the Log class from package php-log
@@ -46,7 +47,7 @@ class FileLogger {
 
     $this->file = $file;
     $this->class = $class;
-    $this->conf = array('mode' => 0600, 'timeFormat' => '   %x %X');
+    $this->conf = array('mode' => 0640, 'timeFormat' => '   %x %X');
     $this->logger = Log::singleton('file', $this->file, $class, $this->conf);
 
   }  
@@ -157,20 +158,22 @@ class FileLogger {
     if(in_array("__toString", $a)) {
       $ret = $obj->__toString();
     } else if(strncmp(gettype($obj),"array",5)==0) {
-      $ret = preg_replace("/[\r\n]/", " ", print_r($obj, true));
+      $ret = StringUtil::get_object_string($obj);
     } else if(strncmp(gettype($obj),"string",6)==0) {
       $ret = $obj;
+    } else if(strncmp(gettype($obj),"integer",7)==0) {
+      $ret = strval($obj);
     } else if(is_null($obj)) {
       $ret = "NULL";
     } else if(is_object($obj)){
       $ret = get_class($obj).spl_object_hash($obj); 
     }
 
-    if($debug===true) $ret = "OBJECT(".preg_replace("/[\r\n]/", "", 
-                                         print_r($obj, true)).")=".$ret;
+    if($debug===true) $ret = "OBJECT(".
+                        StringUtil::get_object_string($obj).")=".$ret;
   
     // replace multiple whitespaces by a single one 
-    return preg_replace("/(\t| )+/"," ", $ret);
+    return $ret;
   }
 
   /**
@@ -216,8 +219,10 @@ class FileLogger {
 
       // replace % with flattened replacements
       foreach($replaces as $r) {
-        if(constant("PEAR_LOG_".$type) == PEAR_LOG_DEBUG) $msg = preg_replace("/%/", $this->flatten($r,true), $msg, 1);
-        else $msg = preg_replace("/%/", $this->flatten($r), $msg, 1);
+        if(constant("PEAR_LOG_".$type) == PEAR_LOG_DEBUG) 
+          $msg = preg_replace("/%/", $this->flatten($r,true), $msg, 1);
+        else 
+          $msg = preg_replace("/%/", $this->flatten($r), $msg, 1);
       }      
     } 
    

@@ -2,6 +2,7 @@
 
 namespace core\shm;
 use core\util\string\StringUtil as StringUtil;
+use core\exception\shm\SegmentException as SegmentException;
 
 /**
  * This class represents a shared memory segment. It can be
@@ -61,6 +62,12 @@ class SharedMemorySegment {
    */
   private $shm_seg_type = "stor";
  
+  /**
+   * The segment type for different usage scenarios.
+   * Currently types "stor", "fifo" and "lifo" are supported.
+   */
+  private $shm_seg_supported_types = array("stor","fifo","lifo");
+
   /**
    * Constant of valid access types. Currently
    * 0: read only (0400)
@@ -201,11 +208,18 @@ class SharedMemorySegment {
    */
   public function set_shm_seg_sem_read($sem = null) {
     if(strncmp(gettype($sem),"object",6)==0 
-       && strncmp(get_class($sem),"core\control\Semaphore",22)==0)
+       && strncmp(get_class($sem),"core\control\Semaphore",22)==0) {
       $this->shm_seg_sem_read = $sem;
-    else
+    } else {
       $this->shm_seg_sem_read = null;
-      //throw ParamNotValidException
+      $this->log(__METHOD__.": %", 
+                 array(new ParamNotValidException(
+                       "sem(core\control\Semaphore)=".
+                       StringUtil::get_object_value($sem))));
+      throw(new ParamNotValidException(
+                       "sem(core\control\Semaphore)=".
+                       StringUtil::get_object_value($sem)));
+    }
   }
 
   /**
@@ -218,11 +232,19 @@ class SharedMemorySegment {
    */
   public function set_shm_seg_sem_write($sem = null) {
     if(strncmp(gettype($sem),"object",6)==0 
-       && strncmp(get_class($sem),"core\control\Semaphore",22)==0)
+       && strncmp(get_class($sem),"core\control\Semaphore",22)==0) {
       $this->shm_seg_sem_write = $sem;
-    else
+    } else {
       $this->shm_seg_sem_write = null;
       //throw ParamNotValidException
+      $this->log(__METHOD__.": %", 
+                 array(new ParamNotValidException(
+                       "sem(core\control\Semaphore)=".
+                       StringUtil::get_object_value($sem))));
+      throw(new ParamNotValidException(
+                       "sem(core\control\Semaphore)=".
+                       StringUtil::get_object_value($sem)));
+    }
   }
 
   /**
@@ -239,6 +261,7 @@ class SharedMemorySegment {
   }
 
   /**
+   * TODO: remove this due to limitations of ftok().
    * Set $this->shm_seg_proj_id. Should be a single character.
    * @param $proj_id preject identifier passed on to ftok().
    * @throws 
@@ -256,6 +279,7 @@ class SharedMemorySegment {
    * Generate a key for this segment.
    */
   public function set_shm_seg_key() {
+    // TODO: replace ftok. pass an int between -/+(pow(2,32-1)-1)
     $this->shm_seg_key = ftok($this->shm_seg_file,$this->shm_seg_proj_id);
   }
 
@@ -276,7 +300,8 @@ class SharedMemorySegment {
    * @param $seg_type segment type
    */
   public function set_shm_seg_type($seg_type = "stor") {
-    if(strncmp(gettype($seg_type),"string",6)==0) {
+
+    if(in_array($seg_type, $this->shm_seg_supported_types, true)) {
      
       switch($seg_type) {
         case "stor": $this->shm_seg_type = "stor"; break; 
@@ -286,8 +311,12 @@ class SharedMemorySegment {
       }
 
     } else {
-      echo "E: UnsuportedSegmentTypeException";
-      //throw(new UnsuportedSegmentTypeException());
+      $this->log(__METHOD__.": %", 
+                 array(new SegmentException(
+                         StringUtil::get_object_string($seg_type),3)));
+      throw(new SegmentException(
+              StringUtil::get_object_string($seg_type),3));
+
     }
   }
 
@@ -312,6 +341,9 @@ class SharedMemorySegment {
     return $this->shm_seg_access_type;
   }
 
+  /**
+   * Get the current segment type set for this segment.
+   */
   public function get_shm_seg_type() {
     return $this->shm_seg_type;
   }

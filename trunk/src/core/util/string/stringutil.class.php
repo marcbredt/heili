@@ -71,6 +71,30 @@ class StringUtil {
     return ($fp!==false ? $fp : -1);
   }
 
+  /**
+   * This function is used to get an object's string representation using
+   * var_export. This function will often be used in combination with
+   * exceptions when dumping or logging a parameter passed.
+   * @param $o object or any other type
+   * @return string representation for $o
+   */
+  public static function get_object_string($o = null) {
+    return preg_replace("/[\t ]+/"," ", preg_replace("/[\r\n]/"," ",
+             print_r($o,true)));
+  }
+
+  /**
+   * This function is used to get an object's value. This function is often
+   * used in conjunction with exception, especially ParamNotValidException
+   * when one wants to determine or log an objects class or its type.
+   * @param $o object or variable the type should be determined for
+   * @return the object's type determined
+   */
+  public static function get_object_value($o = null) {
+    return (strncmp(gettype($sem),"object",6)==0 ? get_class($sem) : 
+            gettype($sem));
+  }
+
 }
 
 ?>

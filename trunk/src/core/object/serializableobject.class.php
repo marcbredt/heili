@@ -51,7 +51,8 @@ class SerializableObject implements Serializable {
     $props = $rclass->getProperties(ReflectionProperty::IS_PUBLIC
                                     |ReflectionProperty::IS_PROTECTED);
 
-    // return only caller attributes for $this
+    // return only caller attributes for $this, everything else can 
+    // be restored upon creation when extending LoggableObject
     foreach($props as $p) {
       if(strncmp(get_class($this),$p->class,strlen(get_class($this)))==0) {
         $ret[] = $p->getName(); 

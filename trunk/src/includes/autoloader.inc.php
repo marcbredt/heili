@@ -13,7 +13,7 @@
   // phpunit, loads files from phpunit-{selenium,story} too
   //require_once("/usr/share/php/PHPUnit/Autoload.php");
 
-  // REQUIRED FOR RUNNING WEB APP
+  // REQUIRED FOR RUNNING A WEB APP
   // http://de2.php.net/manual/en/language.oop5.autoload.php
   // when running build script from .. prepend src directory
   // AND modify the path the autoloader should search for project classes
@@ -42,4 +42,5 @@
 
   // TODO: check for multiple autoloads in phpunit 
   // TODO: namespaces for testsuites in phpunit 
+
 ?>

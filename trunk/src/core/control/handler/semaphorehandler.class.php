@@ -1,9 +1,12 @@
 <?php
 
 namespace core\control\handler;
-use \core\object\LoggableObject as LoggableObject;
-use \core\control\Timer as Timer;
-use \core\control\Semaphore as Semaphore;
+use core\util\string\StringUtil as StringUtil;
+use core\object\LoggableObject as LoggableObject;
+use core\control\Timer as Timer;
+use core\control\Semaphore as Semaphore;
+use core\exception\ParamNotValidException as ParamNotValidException;
+use core\exception\shm\SemaphoreException as SemaphoreException;
 
 /**
  * Handle a semaphore. Acquiring/releasing/removing.
@@ -17,19 +20,9 @@ use \core\control\Semaphore as Semaphore;
 class SemaphoreHandler extends LoggableObject {
 
   /**
-   * Default timeout for acquiring a semaphore.
-   */
-  const sem_acquire_default_timeout = 60;
-
-  /**
    * Semaphore which will be acquired.
    */
   private $semaphore = null;
-
-  /**
-   * Timeout timer for acquiring a semaphore.
-   */
-  private $semaphore_ac_timer = null;
 
   /** 
    * Default number of retries for acquiring a semaphore.
@@ -39,7 +32,7 @@ class SemaphoreHandler extends LoggableObject {
   /**
    * Initialize a semaphore that can be handled by the
    * functions provided by this class.
-   * @throws
+   * @throws ParamNotValidException
    * @return true if loading the semaphore was successful
    */ 
   public function load($sem = null) {
@@ -49,28 +42,17 @@ class SemaphoreHandler extends LoggableObject {
       $this->semaphore = $sem;
       $this->semaphore->create();
       return true;
-    }
-    //else // throw exception if not
-    return false;
-  }
 
-  /**
-   * Set the timeout timer used to acquire a semaphore.
-   * @param $timeout timeout
-   * @throws
-   * @see Timer
-   */
-  private function set_timer($timeout = self::sem_acquire_default_timeout) {
-
-    // setup a timer to avoid endless locking when trying 
-    // to acquire a semaphore
-    $this->semaphore_ac_timer = null;
-    if(strncmp(gettype($timeout),"integer",7)==0) {
-      $this->semaphore->set_sem_acquire_timeout($timeout);
     } else {
-      $this->semaphore->set_sem_acquire_timeout(self::sem_acquire_default_timeout); }
-    $this->semaphore_ac_timer = 
-      new Timer($this->semaphore->get_sem_acquire_timeout());
+      $this->log(__METHOD__.": %",
+                 array(new ParamNotValidException(
+                         "sem(core\control\Semaphore)=".
+                           StringUtil::get_object_value($sem))));
+      throw(new ParamNotValidException(
+              "sem(core\control\Semaphore)=".
+                StringUtil::get_object_value($sem)));
+
+    }
   }
 
   /**
@@ -84,34 +66,46 @@ class SemaphoreHandler extends LoggableObject {
    *       TimeoutThread
    *
    * @param $timeout timeout for acquiring a semaphore
-   * @throws
+   * @throws TimerException
+   * @throws SemaphoreException
    * @see Timer
    */
-  public function acquire($timeout = self::sem_acquire_default_timeout) {
+  public function acquire($timeout = 30, $tries = 3) {
 
     // set and start the timer
-    if(strncmp(gettype($timeout),"integer",7)==0 
-       && $timeout>0) $this->set_timer($timeout);
-    else $this->set_timer($this->semaphore->get_sem_acquire_timeout());
-    $this->semaphore_ac_timer->start();
+    $timer = null;
+    if(strncmp(gettype($timeout),"integer",7)==0 && $timeout>0)
+      $timer = new Timer($timeout);
+    if($timer===null) {
+      $this->log(__METHOD__.": %.", array(new TimerException("creation failed")));
+      throw(new TimerException("creation failed"));
+    }
+    $timer->start();
 
     // now try to acquire a semaphore
     $acquired = false;
     $try = 1;
-    while(!is_null($this->semaphore->get_sem_res()) && !$acquired
-          && !is_null($this->semaphore_ac_timer)
-          && $try <= $this->semaphore_max_try) {
+    while(!is_null($this->semaphore->get_sem_res()) && $acquired===false
+          && $timer!==null && $try <= $this->semaphore_max_try) {
 
       // use sem_acquire with $nowait flag to append a timer
-      $acquired = sem_acquire($this->semaphore->get_sem_res(), true);
+      // NOTE: warnings should be suppressed here any error should throw an 
+      //       exception
+      $acquired = @sem_acquire($this->semaphore->get_sem_res(), true);
   
       // retart the timer
-      if($this->semaphore_ac_timer->get()==0
-         && $this->semaphore_ac_timer->get_timed_out()) { 
-        echo "Try #".$try.". Timer timed out.\n";
+      if($timer->get()==0 && $timer->get_timed_out()) { 
+        $this->log(__METHOD__.": Acquiring. Try #%. Timer timed out.",
+                   array($try));
         $try++;
-        $this->semaphore_ac_timer->start();
+        $timer->start();
       }
+    }
+
+    if($acquired===false) {
+      $this->log(__METHOD__.": %.",
+                 array(new SemaphoreException("acquisition failed",0)));
+      throw(new SemaphoreException("acquisition failed",0));
     }
 
     return $acquired;
@@ -121,12 +115,47 @@ class SemaphoreHandler extends LoggableObject {
    * Release a semaphore when th work is done.
    * DO NOT forget to call this when running sem_acquire without
    * $nowait flag set to true.
+   * @throws TimerException
+   * @throws SemaphoreException
    * @return true if the semaphore was release otherwise false
    */
-  public function release() {
+  public function release($timeout = 30, $tries = 3) {
+
+    // set and start the timer
+    $timer = null;
+    if(strncmp(gettype($timeout),"integer",7)==0 && $timeout>0) 
+      $timer = new Timer($timeout);
+    if($timer===null) {
+      $this->log(__METHOD__.": %.", array(new TimerException("creation failed")));
+      throw(new TimerException("creation failed"));
+    }
+    $timer->start();
+
+    // now try to acquire a semaphore
     $released = false;
-    if(!is_null($this->semaphore->get_sem_res()))
-      $released = sem_release($this->semaphore->get_sem_res());
+    $try = 1;
+    while(!is_null($this->semaphore->get_sem_res()) && $released===false
+          && $timer!==null && $try <= $this->semaphore_max_try) {
+
+      // use sem_acquire with $nowait flag to append a timer
+      $released = @sem_release($this->semaphore->get_sem_res());
+  
+      // retart the timer
+      if($timer->get()==0 && $timer->get_timed_out()) { 
+        $this->log(__METHOD__.": Releasing. Try #%. Timer timed out.",
+                   array($try));
+        $try++;
+        $timer->start();
+      }
+    }
+    
+    // if releasing failed 
+    if($released===false) {
+      $this->log(__METHOD__.": %.",
+                 array(new SemaphoreException("release failed",1)));
+      throw(new SemaphoreException("release failed",1));
+    }
+
     return $released;
   }
 
