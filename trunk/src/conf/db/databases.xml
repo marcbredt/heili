@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <databases default="heili_test">
+
+    <database active="y" name="heili_test">
+      <type>mysql</type>
+      <driver>mysqlpdo</driver>
+      <host>localhost</host>
+      <port>3306</port>
+      <user>heili_test@localhost</user>
+      <pass>heili_test</pass>
+      <db>heili_test</db>
+      <ssl>false</ssl>
+      <persistent>true</persistent>
+      <charset>utf8</charset>
+      <timeout>10</timeout>
+    </database>
+
+    <database active="n" name="heili">
+      <type>mysql</type>
+      <driver>mysqli</driver>
+      <host>localhost</host>
+      <port>3306</port>
+      <user>heili@localhost</user>
+      <pass>heili</pass>
+      <db>heili</db>
+      <ssl>false</ssl>
+      <persistent>true</persistent>
+      <charset>utf8</charset>
+      <timeout>10</timeout>
+    </database>
+  </databases>
+
+</root>

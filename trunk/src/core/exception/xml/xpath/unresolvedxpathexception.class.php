@@ -8,6 +8,7 @@ use \Exception as Exception;
  * evaluations. Used to face uncatched classes in DOMNodeList or
  * uncatched types using method XMLDocument::xpath
  * @see XMLDocument
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class UnresolvedXPathException extends Exception {

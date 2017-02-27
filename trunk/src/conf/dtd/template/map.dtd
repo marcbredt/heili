@@ -1,0 +1,9 @@
+<!ELEMENT root (map+)>
+<!ELEMENT map (mask*)>
+<!ELEMENT mask EMPTY>
+<!ATTLIST mask active CDATA #REQUIRED name CDATA #REQUIRED 
+               module CDATA #REQUIRED target CDATA #REQUIRED 
+               ttype CDATA #REQUIRED index  CDATA #REQUIRED 
+               mask CDATA #REQUIRED template CDATA #REQUIRED 
+               type CDATA #REQUIRED>
+                  

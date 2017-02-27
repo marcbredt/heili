@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <errors default="0000">
+    <error eid="0000" name="unknown">
+      <de>Entschuldigung. Das hätte nicht passieren dürfen.</de>
+    </error>
+    <error eid="0001" name="paramnotarray">
+      <de>Parameter wurden nicht als Array übergeben.</de>
+    </error>
+    <error eid="0002" name="paramnumber">
+      <de>Parameter wurden nicht als Array übergeben.</de>
+    </error>
+    <error eid="0003" name="dbexception">
+      <de>Es sind Probleme bei der Datenbankanbindung aufgetreten.</de>
+    </error>
+    <error eid="0004" name="langexception">
+      <de>Es sind Sprachfehler wahrgenommen worden.</de>
+    </error>
+    <error eid="0005" name="maskerror">
+      <de>Es sind Inhaltsfehler aufgetreten.</de>
+    </error>
+    <error eid="0006" name="loginexception">
+      <de>Die eingegebenen Zugangsdaten sind ungültig.</de>
+    </error>
+    <error eid="0007" name="authexception">
+      <de>Sie besitzen unzureichende Rechte. Bitte passen Sie Ihre Rolle an.</de>
+    </error>
+    <error eid="0008" name="reqexception">
+      <de>Es sind Anfragefehler aufgetreten.</de>
+    </error>
+    <error eid="0009" name="cookieexception">
+      <de>Ein Keks ist zerbröselt.</de>
+    </error>
+    <error eid="0010" name="sessionexception">
+      <de>Es sind Sitzungsfehler aufgetreten.</de>
+    </error>
+    <error eid="0011" name="templateexception">
+      <de>Es sind Vorlagenfehler aufgetreten.</de>
+    </error>
+    <error eid="0012" name="moduleexception">
+      <de>Es sind Modulfehler aufgetreten.</de>
+    </error>
+  </errors>
+</root>

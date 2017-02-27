@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <global>
+    <exception name="PDOException" />
+    <exception name="core\exception\http\RequestException" />
+    <exception name="core\exception\xml\XMLNotValidException" />
+  </global>
+  <local>
+    <exception name="core\exception\auth\SessionException" />
+    <exception name="core\exception\auth\AuthException" />
+    <exception name="core\exception\auth\RightException" />
+    <exception name="core\exception\mask\MaskException" />
+  </local>
+</root>

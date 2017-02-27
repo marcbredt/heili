@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <map>
+
+    <mask active="y" name="c_title" module="core" target="/html/head/title" 
+          ttype="node" index="0" mask="location" template="here" type="php" />  
+
+  </map>
+
+</root>

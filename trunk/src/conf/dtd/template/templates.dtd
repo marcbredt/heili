@@ -1,0 +1,5 @@
+<!ELEMENT root (templates+)>
+<!ELEMENT templates (template+)>
+<!ATTLIST templates default CDATA #REQUIRED>
+<!ELEMENT template EMPTY>
+<!ATTLIST template active CDATA #REQUIRED name CDATA #REQUIRED>

@@ -1,0 +1,2 @@
+<!ELEMENT signature (#PCDATA)>
+<!ATTLIST signature type CDATA #REQUIRED key CDATA #REQUIRED>

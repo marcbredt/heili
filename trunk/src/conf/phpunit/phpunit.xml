@@ -2,77 +2,60 @@
 
 <phpunit colors="true" verbose="true" 
          stopOnError="false" stopOnFailure="false" 
-         bootstrap="@confdir-phpunit@/autoloader.inc.php"
+         bootstrap="../../conf/phpunit/autoloader.include.php"
          timeoutForSmallTests="3" timeoutForMediumTests="10" 
          timeoutForLargeTests="60">
 
-  <!-- TESTSUITES -->
   <testsuites>
 
-    <!-- NOTE: the active attribute required for ant script to figure 
-               out which suites should be run
-               see src/util/build/phpunit-getsuites -->
-
-    <!-- NOTE: newlined pathes for <directory>-tags do not work
-               because the containing path is not trimmed -->
-
-    <!-- NOTE: in order to have a complete coverage report for all
-               test classes run them as one testsuite otherwise the
-               coverage report just shows results for the last suite
-               assuming all other classes were covered with e.g. 0%.
-               For multiple applicatons that probably share code
-               manage the testsuite path in a way all applications 
-               are regarded. -->
-
-    <testsuite name="@confvalue-doxygen-pjname@" active="y">
-
-      <directory suffix=".test.class.php" phpVersion="5.6.12" phpVersionOperator="&gt;=">@confvalue-phpunit-indir@/core/util/log</directory>
-
-      <directory suffix=".test.class.php" phpVersion="5.6.12" phpVersionOperator="&gt;=">@confvalue-phpunit-indir@/core/util/xml</directory>
-
-      <directory suffix=".test.class.php" phpVersion="5.6.12" phpVersionOperator="&gt;=">@confvalue-phpunit-indir@/core</directory>
-
+    <testsuite name="heili">
+      <directory suffix=".test.class.php" phpVersion="5.6.12" 
+                 phpVersionOperator="&gt;=">../../test</directory>
     </testsuite>
 
   </testsuites>
 
-  <!-- FILTER -->
-  <!-- NOTE: exclude some files for calculating coverage in testsuite(s) above
-             e.g. exclude autoloader.class.php as it primarly is used to bootstrap 
-               test those classes separately -->
-
   <!-- https://github.com/sebastianbergmann/phpunit/issues/1932 -->
   <!-- as of PHPUnit >= 5.0 a whitelist is mandatory --> 
+  <!-- Processing uncovered files will lead to necessary inclusions in the bootstrap
+       file. Especially the inclusion of the project's exception handler is needed
+       which will probably override PHPUnit's error handler causing unit tests
+       to be quit silently. Therefor just add the uncovered files to get a full
+       coverage report but avoid unit tests to fail. -->
   <filter>
-    <!--
-    <whitelist 
-               addUncoveredFilesFromWhitelist="true"
-               processUncoveredFilesFromWhitelist="false">
-    -->
+
     <whitelist addUncoveredFilesFromWhitelist="true" 
                processUncoveredFilesFromWhitelist="false">
-      <directory suffix=".php">@confvalue-phpunit-indir@</directory>
-      <!--
+
+      <directory suffix=".php">../..</directory>
+
+      <!-- wild card suffixes are not evaluated, e.g. to .php, set it explicitly -->
       <exclude>
-        <file>@confdir-phpunit@/autoloader.class.php</file>
+        <directory suffix=".php">../../bins</directory>
+        <directory suffix=".php">../../bugs</directory>
+        <directory suffix=".php">../../conf/phpunit</directory>
+        <directory suffix=".php">../../conf/doxygen</directory>
+        <directory suffix=".php">../../dump</directory>
+        <directory suffix=".php">../../ptch</directory>
+        <directory suffix=".php">../../test</directory>
       </exclude>
-      -->
+
     </whitelist>
+
   </filter>
 
-  <!-- LOGGING -->
   <logging>
-    <log type="coverage-html" target="@phpunit-log-dir@/main/coverage-html" lowUpperBound="50" highLowerBound="90"/>
-    <log type="coverage-clover" target="@phpunit-log-dir@/main/coverage-clover.xml"/>
-    <log type="coverage-crap4j" target="@phpunit-log-dir@/main/coverage-crap4j.xml"/>
-    <log type="coverage-php" target="@phpunit-log-dir@/main/coverage-log.php"/>
-    <log type="coverage-text" target="@phpunit-log-dir@/main/coverage-text.log" showUncoveredFiles="false" />
-    <log type="json" target="@phpunit-log-dir@/main/log.json"/>
-    <log type="plain" target="@phpunit-log-dir@/main/plain.log"/>
-    <log type="tap" target="@phpunit-log-dir@/main/log.tap"/>
-    <log type="junit" target="@phpunit-log-dir@/main/junit.xml" logIncompleteSkipped="false"/>
-    <log type="testdox-html" target="@phpunit-log-dir@/main/testdox-html.html"/>
-    <log type="testdox-text" target="@phpunit-log-dir@/main/testdox-text.log"/>
+    <log type="coverage-html" target="../../../../doc/phpunit/main/coverage-html" lowUpperBound="50" highLowerBound="90"/>
+    <log type="coverage-clover" target="../../../../doc/phpunit/main/coverage-clover.xml"/>
+    <log type="coverage-crap4j" target="../../../../doc/phpunit/main/coverage-crap4j.xml"/>
+    <log type="coverage-php" target="../../../../doc/phpunit/main/coverage-log.php"/>
+    <log type="coverage-text" target="../../../../doc/phpunit/main/coverage-text.log" showUncoveredFiles="false" />
+    <log type="json" target="../../../../doc/phpunit/main/log.json"/>
+    <log type="plain" target="../../../../doc/phpunit/main/plain.log"/>
+    <log type="tap" target="../../../../doc/phpunit/main/log.tap"/>
+    <log type="junit" target="../../../../doc/phpunit/main/junit.xml" logIncompleteSkipped="false"/>
+    <log type="testdox-html" target="../../../../doc/phpunit/main/testdox-html.html"/>
+    <log type="testdox-text" target="../../../../doc/phpunit/main/testdox-text.log"/>
   </logging>
 
 </phpunit>

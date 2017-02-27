@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <!-- available languages in this module -->
+  <group name="languages" type="none" default="en">
+    <element active="y" name="en" key="en" value="en" />
+  </group>
+
+</root>

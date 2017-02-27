@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <module active="y" name="calendar" type="module" version="0.1.0">
+
+    <!-- module dependencies -->
+    <dependencies>
+      <dependency active="y" module="core" version=">=0.1.0" />
+    </dependencies>
+
+    <!-- group config like in core.xml to e.g. load constants -->
+    <!-- each group's element's will be additionally internally prefixed with
+         MOD_<MODNAME>_ to avoid conflicts with other module configurations 
+         using a prefix in a group will then lead to e.g. MOD_AUTH_CONFIG_* -->
+    <config>
+      <groups>
+        <group name="constants" type="const" prefix="">
+          <element name="name" key="NAME" value="calendar" />
+        </group>
+        <group name="predefinedconstants" type="const" prefix="PATH_">
+          <element name="statements" key="CLASS" value="clss/" />
+          <element name="statements" key="INCLUDE" value="incs/" />
+          <element name="statements" key="MASK" value="mask/" />
+          <element name="statements" key="CONF" value="conf/" />
+        </group>
+      </groups>
+    </config>
+
+    <!-- 
+      requirements, especially files needed to be included before any html code
+      is generated, 
+    -->
+    <includes provides="">
+      <include active="y" order="40001"  type="file">foo.include.php</include>
+      <include active="y" order="1001"   type="file">bar.include.php</include>
+      <include active="y" order="100001" type="file">keks.include.php</include>
+      <include active="y" order="100000" type="file">pups.include.php</include>
+    </includes>
+
+    <!-- generally configure usage for specific roles -->
+    <!--<rights>guest,user,admin</rights>-->
+
+    <!-- global variables this module provides -->
+    <!-- e.g. <provides>authenticator</provides> 
+         if $authenticator = ...; is set somewhere in the include files --> 
+    <!--<provides>dgs</provides>-->
+
+    <!-- masks this module provides -->
+    <!-- the "type" defines the the-->
+    <!--<masks />-->
+    <!--
+    <masks default="main" file="xml/masks.xml">
+      <mask active="y" name="main" type="php" roles="guest" />
+      <mask active="y" name="login" type="php" roles="guest" />
+      <mask active="y" name="logout" type="php" roles="user" />
+    </masks>
+    -->
+
+    <!-- any action this module provides -->
+    <!-- used parameter will be prefixed with the module name -->
+    <!--<actions />-->
+    <!--
+    <actions default="">
+      <action name="login" />
+      <action name="logout" />
+    </actions>
+    -->
+
+    <!-- classes will be loaded by adjusting the class in Devisor::isininc() -->
+    <!-- e.g. module/a/b/Class changes to mods/a/clss/b/Class -->
+    <!-- therefor the directories "mods" and "clss" (in mods/a) need to exist -->
+
+    <!-- policy for module parameters is "drop" -->
+    <!-- relative path is located at the root module path -->
+    <!-- each file will be validated against conf/dtd/data/superglobal.dtd -->
+    <!--<superglobals />-->
+    <!--
+    <superglobals>
+      <superglobal active="y" name="globals" file="conf/xml/globals.xml" />
+      <superglobal active="n" name="get" file="conf/xml/get.xml" />
+      <superglobal active="n" name="post" file="conf/xml/post.xml" />
+      <superglobal active="y" name="cookie" file="conf/xml/cookie.xml" />
+      <superglobal active="n" name="files" file="conf/xml/files.xml" />
+      <superglobal active="n" name="env" file="conf/xml/env.xml" />
+      <superglobal active="n" name="request" file="conf/xml/request.xml" />
+      <superglobal active="n" name="server" file="conf/xml/server.xml" />
+      <superglobal active="n" name="session" file="conf/xml/session.xml" />
+    </superglobals>
+    -->
+
+  </module>
+
+</root>

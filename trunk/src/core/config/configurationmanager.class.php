@@ -23,7 +23,7 @@ class ConfigurationManager implements ManagerOperation {
 
   public function register($name = null, $conf = null) {}
 
-  public function unregister($name = null) {}
+  public function unregister($name = null, $conf = null) {}
 
 }
 

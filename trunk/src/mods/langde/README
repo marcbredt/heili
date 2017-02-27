@@ -1,0 +1,9 @@
+* language system is bound to the core
+* any additional language module need to contain all files with static text
+  * LANG.xml, e.g. en.xml containing all static language texts
+  * errors.xml containing all error texts for this language
+* masks to handle the frontend view can be provided
+  * via mask/php/MASK.php
+  * the default mask used is bound to the core core/mask/php/lang/lang.php
+* additional database relations will be (interactively) created and set upon
+  installation, see Languages section in the project's README  

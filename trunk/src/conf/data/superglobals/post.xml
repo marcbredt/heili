@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <superglobal name="post" source="_POST" 
+               evaluate="core\html\form\FormEvaluator">
+
+    <key name="core:action"		type="file"
+         value="actions.xml" />
+
+    <key name="core:token"		type="regex" 
+         value="/^[a-z0-9]{32}+$/" />
+
+    <key name="core:email"		type="regex" 
+         value="/^([a-z0-9\.]+@[a-z0-9]+\.[a-z]+){5,80}$/" />
+
+    <key name="core:password"	type="regex"
+         value="/^[a-z0-9]{32}+$/" />
+
+  </superglobal>
+
+</root>

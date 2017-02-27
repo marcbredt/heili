@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <superglobal name="cookie" source="_COOKIE">
+
+    <!-- session id, default PHPSESSID -->
+    <key name="core:pid" type="regex" value="/^[a-z0-9]{32}+$/" />
+
+  </superglobal>
+  
+</root>

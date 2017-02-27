@@ -1,15 +1,29 @@
 <?php
 
 namespace core\shm;
+use core\util\param\Validator as Validator;
 use core\register\ManagableRegister as ManagableRegister;
 use core\shm\handler\SharedMemoryHandler as SharedMemoryHandler;
 
 /**
- * This class can be used to manage shared memory segments
- * which can be created through 
+ * This class can be used to manage shared memory segments which can be created
+ * through a SharedMemoryHandler. As objects are not accessible after script
+ * execution there is need to provide a manager segment to store any segment 
+ * information necessary. Especially for taking track of generated keys for 
+ * segments and semaphores there need to be entries stored.
+ *
+ * The main manager segment layout with key <code>intval(-1*(pow(2,$arch-1)-1))
+ * </code> should currently contain the following data.
+ * <pre>[#segments][#semaphores][lastsegkey][lastsemkey]...;</pre>
+ *
+ * Additionally there need to be segment information stored for each segment
+ * present to be able to connect to again after script execution.
+ * <pre>[#segid][node][visibility][strategy][#users]...;</pre>
+ * 
  * @author Marc Bredt
+ * @see SharedMemoryHandler
  */
-class SharedMemoryManager extends LoggableObject {
+class SharedMemoryManager {
 
   /**
    * Processor architecture. Used to derive the maximum amount
@@ -66,7 +80,7 @@ class SharedMemoryManager extends LoggableObject {
    * "Warning: shmop_open(): unable to attach or create shared memory segment"
    * upon creation but script execution is still possible.
    */
-  private $shm_seg_max = 4096;
+  private $shm_seg_mni = 4096;
 
   /**
    * Maximum number of bytes that can be used as shared memory
@@ -78,7 +92,8 @@ class SharedMemoryManager extends LoggableObject {
    * "Warning: shmop_open(): unable to attach or create shared memory segment"
    * upon creation but script execution is still possible.
    */
-  private $shm_seg_mni = 4278190079;
+  //private $shm_seg_max = 4278190079;
+  private $shm_seg_max = null;
 
   /*
    * NOTE: Sizes for different usage scenarios.
@@ -114,9 +129,11 @@ class SharedMemoryManager extends LoggableObject {
    * @param $parch processor architecture, 32 or 64 bit 
    */
   public function __construct($parch = 32) {
+ 
+    global $filelogger;
 
     // check the processor architecture
-    if(in_array($parch, array(32,64), true)) {
+    if(Validator::in($parch, array(32,64))) {
 
       // keep processor architecture
       $this->shm_proc_arch = $parch;
@@ -130,7 +147,7 @@ class SharedMemoryManager extends LoggableObject {
       $this->shm_key_min = -1 * $this->shm_key_max;
 
     } else {
-      $this->log(__METHOD__.": %", array(new ManagerException()));
+      $filelogger->log("%", array(new ManagerException()));
       throw(new ManagerException());
 
     }

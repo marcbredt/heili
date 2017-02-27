@@ -1,0 +1,2 @@
+<!ELEMENT license (#PCDATA)>
+<!ATTLIST license type CDATA #REQUIRED>

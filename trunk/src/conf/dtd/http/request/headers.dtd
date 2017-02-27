@@ -1,0 +1,6 @@
+<!ELEMENT root (headers+)>
+<!ELEMENT headers (key+)>
+<!ATTLIST headers name CDATA #REQUIRED policy CDATA #REQUIRED>
+<!ELEMENT key EMPTY>
+<!ATTLIST key name CDATA #REQUIRED type CDATA #REQUIRED value CDATA #REQUIRED>
+

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<module name="page" version="0.0.1">
+  <priority>optional</priority>
+  <sections>
+    <section>frontend</section>
+  </sections> 
+  <size>10000</size>
+  <maintainers>
+    <maintainer>
+      <name>Marc Bredt</name>
+      <mail>marc.bredt@gmail.com</mail>
+    </maintainer>
+    <maintainer>
+      <group>Heili frontend group</group>
+      <mail>heili-frontend@kleinkiesow.lo</mail>
+    </maintainer>
+  </maintainers>
+  <description>
+    A frontend to provide a page switching mechanism when dividing contents 
+    into several pages.
+  </description>
+  <homepage>http://modules.heili.lo</homepage>
+  <depends>
+    <package type="system" name="php"  version=">=5.0.0" />
+    <package type="module" name="core" version=">=0.0.1" />
+  </depends>
+  <suggests />
+  <breaks />
+</module>

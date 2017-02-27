@@ -1,0 +1,845 @@
+heili - keep it simple
+----------------------
+
+* An approach on creating modularized and distributive maintained web 
+  applications through provision of core functionalities.
+* A minimal database authentication mechanism is available to allow 
+  managing module installations.
+* Development is totally distinct from productive usage because of
+  module validation.
+
+
+Current tasks
+-------------
+
+* actions
+  * mapping action/depends definition 
+    -> ActionHandler::initialize()
+  * easy input var access for variables already checked via Accessor
+    -> Provider class for filtered/sanitized input
+    -> accessible via Accessor
+* namespace check tool
+* exception
+  * test global exception
+  * implement local exception + data forward
+  * test local exception, e.g. RightException currently not recognized as local
+* layout
+  * template engine
+    * FormLoader works, complete form configs for current masks
+  * masks 
+    * restore on errors - see data verification
+* database
+  * driver handling 
+    * odbc
+    * pdo (mysql,postgre,oracle,...)
+    * mysqli
+    * pgsql
+    * db2
+    * sqlite
+* modules
+  * override/merge xml
+    * XMLDocument should search for and join corresponding module config files
+      internally to provide an automation when adding modules.
+    * XMLDocument must load from, e.g. shm, if config already loaded, therefor
+      register all config loaded to lookup configs first
+  * param (form), action
+* form handling
+  * datagetter - return structured xmldoc after batch
+  * builder - create from xmldoc
+  * evaluator - module bound param check, regex check
+* authentication
+  * query inject
+* shm
+  * key gen for semaphores/segments (int), identification (uuid) 
+  * shm handler/con mechanisms
+    * write sem wait for read procs to be finished
+  * shm phpunit tests
+    * handlers
+    * semaphores, managers
+  * shm manager
+  * shm examples
+    * semaphores
+    * manager
+  * shm propagators/cloners
+* protocol db
+
+
+Future tasks
+------------
+* profiler for memory and timing
+  * for each class and include file
+* localization for other form element attributes or xml contents
+* data passing onto input elements via InputElement::build() can be modeled as
+  data objects with corresponding xml bound
+* statistics/profiling module
+  * db access time, query optimization
+
+
+Notes on the project layout
+---------------------------
+
+                           ^
+                           |
+                        response 
+                           |
+---------------------------|----------------------------------------
+                        html
+-----|----+------------|-----------------------------------------|--
+     |    |        modules                                       |
+     |    +----------+----------+------------------------------+-|--
+     |    | calendar | chat | dbdesign | ...                   | |
+-----|----+-----|----+-----|-----------------------------------+-|--
+                    core
+-----|----+------|---+---------------|---------------|-----------|--
+     |           | validator,filter  |   modloader   |           |
+-----|-----+-----|---++--------------|---------------|---+-------|--
+ exception | database | request |   config   |  logging  | template
+ language  |   auth   | session |  control   |    shm    |   form
+ register  |  system  |   util  |    ...
+-----------+----------+----+-----------------+-----------+----------
+                           ^
+                           |
+                        request
+                           |
+
+
+Core loading
+------------
+* AL = Autoloader, EH = ExceptionHandler, FL = Filelogger, M = Modulesystem, 
+  S = Session, C = Cookie, O = Others, e.g. Language loaded via "<includes />"
+  T = Template, belongs to O but shown in the handling graph for clarification
+* all components loaded after M will be loaded via includes, see conf/module.xml
+
+             h
+     +-------<-----+
+     |             |
+  ---+-> AL -----> EH -----> FL -----> M -----> S -----> C -----> O -----> ... -----> EH -----> T
+         ^         ^         |         |        |        |        |
+         +----<----+----<----+         |        |        |        |
+              f    |    e              |        |        |        |
+                   +----<--------------+--------+--------+        |
+                   |                                              |
+                   |                        g                     |
+                   +----<-----------------------------------------+
+
+* AL and EH need to be fully tested to ensure no unhandled exceptions will be
+  thrown 
+  * means all classes used by EH need to work properly as well
+    * e.g. Session(Handler), Filelogger, Template, ... 
+  * exception information can always be determined from the exception thrown
+* after AL and EH is loaded AL is allowed to throw UnknownClassException which
+  EH should handle as well
+* designing the core loading this way it is possible to mainly catch every 
+  exception but EH need to provide different handlings for the two states which 
+  are defined by the path 
+  * before FL/M/S/C fully loaded
+    * in this state exceptions thrown should only be displayed globally using
+      the template class and the corresponding error.html file
+    * if exceptions thrown in this state the EH need to setup the required 
+      identification mechanisms or simply display a global error message using
+      the template class
+  * after FL/M/S/C
+    * in this state all necessary identifications mechanism have taken place so
+      exceptions thrown can be stored in e.g. the session itself for local ones
+    * but additional , like checking if $template contains nodes, for 
+      presenting local exceptions need to be performed
+* types of exceptions
+  * global exceptions = exceptions that interrupt the application's process flow
+                        e.g. PDOExceptions which will throw fatal errors 
+                        instantly and therefor damage the whole HTML structure
+  * local exceptions = exceptions that do not interrupt the application's 
+                       process flow, mainly those that respond to user actions
+                       e.g. login failed or similar which additionally means
+                       the template or masks currently used could be fully lodaded
+  * e = global exception
+  * f = global exception, especially UnknownClassException
+  * g = global (by EH definition) or local exceptions
+  * h = only local
+
+
+Data verification process
+-------------------------
+
+* data passed probably need to be checked/sanitized before passing on to any
+  mask/class in case of data causing problems to the underlying system
+  * means if there are e.g. apache or php bugs that react on evil data they
+    should probably be sanitized at the start
+  * or leave bugfixing of datapassing to the server and php (module) developers
+
+* mainly all data passed need to be verified in the mask itself
+
+               1|
+                +------------+
+                +---------+  |
+                |         |  |
+                |         |6 |
+                V         |  |
+          +------------+  |  |
+  +------>|    core    |--+  |
+  |       +------------+     |
+  |         |   |    |       |
+  |         |   |    |       |
+  |         |2  |7   |4      |
+  |         |   |    |       |
+  |         |   |    |       |
+  |         V   V    V       |
+  |       +------------+     |
+  |       |    mask    |     |
+  |       +------------+     |
+  |         |5   |8   |3     |
+  +---------+    |    +------+
+                 V
+
+* process is as follows 
+  1 = initial connect to the app
+  2 = load corresponding mask
+  3 = send (modified) data (after insertion)
+  4 = pass unfiltered data to the mask
+  5 = before echoing or putting data into input fields check them
+      and in case of invalid data throw a local exception forwarding
+      the evil data passed
+  6 = setup a local exception - means store it in the session -
+      and send sanitized data to the app again
+  7 = pass sinitized data on to the mask and echo it or place it in the 
+      corresponding input fields
+  8 = leave mask evaluation, if data is valid (regex match and not evil) 
+      action on this data will be run otherwise the exception do nothing
+      and let the exception handler handle the local exception right
+      before the sending the response
+
+
+Global usable variables in any scopes (no modules)
+--------------------------------------------------
+
+* $autoloader
+* $filelogger
+* $xmlconfig
+* $session
+* $cookie
+* $exceptionhandler
+* $modulemap
+* $request
+* $inputprovider
+* $language
+* $template
+* ($response)
+
+
+Demonstration
+-------------
+
+* exception handling, error generation/display
+  * as probably not for all kind of errors you can think of an exception 
+    is thrown try to throw a PDOException by e.g. shutting down the mysql
+    database
+  * you then should see a global error popping up
+
+
+File naming conventions
+-----------------------
+
+* class file names as follows
+  * case sensitive class name + class type suffix + .php
+  * e.g. autooader.class.php, loggable.interface.php, required.include.php
+* namespace needs to represent the directory structure under main/../
+  * e.g. core\util\string maps to core/util/string
+  * file names are not fully case sensitive
+    * searches for files FooClass=fooclass
+    * but not for fooClass
+* test classes are named name.test.class.php
+* szenario tests can be created using
+  * phpunit testsuites
+  * hinject
+* using namespaces (for external classes)
+  * http://stackoverflow.com/questions/32478962
+  * namespaced class files within other namespaces need to be called
+    with root namespace prefix
+    * \util\sth\Class replaces util\sth\Class if namespace is not
+      util\sth
+* (test) files
+  * class file [Cc]lass[Nn]ame.class.php
+  * corresponding testfile [Cc]lass[Nn]ame[Tt]est.test.class.php
+* see the module section as well
+* as the "diff" tool only supports wildcards/regex w/o recognizing pathes
+  core files should not be named w/ respect to the following expressions
+  * '*phpunit*' - excludes diff for excluded phpunit config/bootstrap files
+  * '*test*' - exclude phpunit test classes as well
+  * additionally avoid naming regarding binary/script files like in bins/
+  * check the "diff" command when running "bins/patch -c" to get more 
+    restrictions on file naming
+
+
+Logging
+-------
+
+* variables provided via the include section can be used globally
+  * see section "Global usable variables in any scopes"
+  * e.g. include the instruction "global $filelogger;" to be able
+    to access the filelogger provided in (class) functions
+
+
+Requirements
+------------
+
+* check the Requirements section in the doxygen documentation
+  * requirements can be added via "@req" tag in the inline documentation
+* PHP >= 5.1.2, spl_autoload_* functions are required
+* PHP >= 5.1.0, class Exception
+* PHP >= 5.1.0, PDO module (as mysql is deprecated) from php-mysql enabled by
+                default
+* PHP >= 5.2.0, PHP filter and sanitization functions
+  * classes: core\util\param\{Validator,Filter,Sanitizator}
+  * http://php.net/manual/de/filter.installation.php
+* php(5)-mysql
+  * db modules - mysql/mysqli/pdo_mysql
+  * innodb - default storage system as of mysql 5.5 (*nix), 5.0 (win)
+             adjustable with TYPE or ENGINE
+    * provisdes transactions, myisam does not :(         
+* openssl >= 0.9.6
+  * required for the tokenizer
+* libxml >= 2.6.0
+  * for php libxml extension as basis for e.g. DOM
+* libxsl >= 1.1.0, php5-xsl
+  * for sorting and other transforming mechanisms
+* findutils
+  * classes ModuleLoader, Module, CommandExecutor, Command
+  * find - mindepth, maxdepth, type, not, wholename, exec
+* gnupg | gnupg2
+  * gpg | gpg2 - keyring, verify
+* coreutils
+  * cut, sort, md5sum
+* gawk
+* doxygen
+* graphviz
+  * dot
+* phpunit
+  * php-codecoverage  # for code coverage
+  * php5-xdebug       # for code coverage/profiling
+    * OPTIONAL webgrind to read cachgrind files via webinterface
+  * php-token-stream # for code coverage
+    * bootstrap the autoloader from this package 
+    * or better run the one provided by the application
+  * php5-mcrypt
+    * for testing purposes, creating random keys/hashes
+  * OPTIONAL phpunit-selenium, phpunit-story 
+    * for loading phpunit's selenium classes
+    * avoids holy cow messages of own autoloader
+
+
+Virtualhost configuration
+-------------------------
+
+* the document root must point to the deployed "main/" directory
+* classes/configuration used will not be accessible from the outside as 
+  the directories "conf/" and "core/" are siblings to the main directory
+* if you want to adjust the folder structure provided use soft links for
+  the "core/" and "conf/" directories to keep the application working 
+  out of the box gathering files via relative pathes
+  * or adjust the scripts in the bins/ directory
+
+
+Databases
+---------
+
+* currently no indexing due to the project's database size
+  * furtherimprovement on indexing should consider table langtext for 
+    searching or any key(pair) from any table which is used to order data
+* database diff for upgrading from test servers
+  * mysqldiff - mysql-utilities - prod vs. test servers
+* database actions on form submission -> executor.class.php
+  * TODO: check if tables,columns,... exist
+  * TODO: open/close transactions for edit sessions and enumerated result sets
+  * joins/as -> determine colnames/types of columns
+    * for filling forms the following conventions are helpful as well
+  * modify result set keys to identify "table.column"s
+    * conventions -> no wildcards, "table.colname" alias for each column when
+      filling forms to be able to map values
+    * if no "table.column" structure is provided the first table name of
+      the 'from' part will be taken as table prefix  
+
+
+Modules
+-------
+* constants MOD_<MNAME>_{CLASS,INCLUDE,MASK,CONF} will be set upon module 
+  initialization and therefor cannot be overridden
+* module classes need to be located in mods/MODNAME/clss folder
+  * namespace alias need to be module/MODNAME/foo/BarClass
+    * will be internally changed to mods/MODNAME/clss/foo/BarClass upon autoloading
+      assuming the second namespace section is the module name
+    * see Devisor::isininc() where each class presence is checked 
+* each module mask need to handle any appearance/behaviour itself
+  * for e.g. different end user devices like smartphones/tablets/laptops ... 
+  * future task could provision this functionality to the core or as module
+* main rights evaluation for masks can be done by the moduleloader any other
+  restrictions to superglobal parameters set must be done by the module
+* multiple module types
+  * module - additional functionality to the core 
+  * template - addtional template
+  * extension - for e.g. lang module, additional lang files
+* necessary folder structure, clss/mask/conf/incs should be present as for those
+  folders are constants set internally, see above
+  * mods/MODNAME
+    +--clss
+    +--mask
+       +--TYPE - e.g. php,html
+          +--MASKNAME - e.g. auth
+             +--TEMPLATE.TYPE - login.php
+          +--TEMPLATE.TYPE - e.g. main.php
+    +--conf
+    +--incs
+* rights
+  * rights section defines which roles are allowed to access a module's mask
+  * class Authenticator of module auth can be used to evaluate or modify the 
+    authentication state when module "auth" is loaded
+* configuration merge
+  * each module file under "conf/" will be merged with the corresponding core
+    file if it follows the same directory/filename structure if not defined in
+    another way by a "module.xml" section, see module.dtd
+  * a configuration merge should be stored in shared memory to provide an
+    initialized config merge on every request without initializing a merge again
+  * actually XMLDocument only loads the config passed
+    * it priovides a merging algorithm regarding a module dependency tree 
+      * see XMLDocument::join/merge()
+    * it needs a possibility to identify already loaded configurations
+      to be able to bind the current system onto SHM usage
+* each module (the 'core' module as well) need to contain a module file 
+  'module.xml'
+  * all module files will be merged into one XMLDocument following the module
+    load tree before accessing the core's module file
+  * handling it that way allows to access module values as well without
+    creating a document for each file first
+  * but keep in mind it there need to be a marker for modules to adjust
+    pathes for accessing a module's config file, like en.xml fron lang-en module
+* key config definitions
+  * action, session, main query params, masks
+  * error definitionss 
+    * > 10k, <=10k reserved for core application, otherwise override
+  * optional
+    * database structures
+    * database configs
+    * statement defs
+  * distiction of request parameters
+    * e.g.core vs. module parameters, core:sid/survey:sid
+
+
+Signing modules
+---------------
+
+* create a detached and armored signature for the file hashes excluding the 
+  sinature store
+  $ find -type f -not -wholename "./conf/signature.xml" -exec md5sum {} + | \ 
+      cut -d' ' -f1 | sort | md5sum | cut -d' ' -f1 | \ 
+      gpg --sign-with 55CEBC6B --passphrase "****" --detach-sign --armor -
+  * store signature in modules/MODNAME/conf/signature.xml
+* verify this signature but be aware of leading whitespaces
+  $ xmllint --xpath "string(/signature)" conf/xml/signature.xml | \ 
+      sed -e 's/^[\t ]*//g' > /tmp/module.sig
+  $ find -type f -not -wholename "./conf/xml/signature.xml" -exec md5sum {} + | \ 
+      cut -d' ' -f1 | sort | md5sum | cut -d' ' -f1 | \ 
+      gpg --verify /tmp/module.sig -
+* signing modules that way it is possible to verify the integrity of a module
+  after download/install and additionally after modification
+* gpg/reasons for validation failures
+  * deployed core modified and GPG_VERIFY=1
+  * files included in hashing differ
+    * check the 'find' commands in bins/modularize.sh and exclude src/-folders
+      like test/,ptch/,bins/ which do not contain any application source when
+      running 
+  * the signature key mentioned in signature.xml needs is not available in 
+    gpg's --keyring
+  * gpg's --homedir is not writeable for www-data (or the webserver's user)
+    * a tmp file is created in there to verify a signature
+  * gpg's --keyring needs to be readable for www-data (or the webserver's user)
+  * the path to the files gpg uses need to be accessible (+x)
+* regarding this it is just possible for an attacker to create an updated
+  signature to inject code if he has access to the node itself and to the 
+  verifying keyring the developers pgp key is installed to and used from
+  * so keyrings used for such an action should just be altered by trusted
+    users (root), persons or environments, keyring properties exemplary 
+    could look like "keyring -rw-r----- root:www-data"
+  * there could also be another signing server bound to the network to
+    separate signing from hosting making it necessary for an abitrary user
+    to take over control of multiple nodes 
+  * additionally the application itself could store a module key history into
+    database which could only be altered if the next valid accesstoken for 
+    the key history insertion is used to insert the next module signing key 
+  * further any admin section of this application should not be accessible
+    from the outside, therfor create two different document roots for the 
+    application servers with subnet restrictions
+  * when in productive mode GPG_VERIFY should always be set to '1' to detect 
+    successful break in attempts by e.g. the placement of foreign files which
+    will cause the module verification to fail throwing a global error message
+    * this mechanism prevents users from getting infected or avaoids modified
+      output (except MITM attacks in this scenario)
+    * therefor any temporary files needed should be placed outside of the core
+      application and module directories
+* verification is invoked right before any source file is included otherwise 
+  modification would be unrecognized
+* to create module signatures use the script "modularize.sh"
+
+
+Notes on shared memory usage
+----------------------------
+* extensive load needs to be handled through the balancer/cluster itself
+  * additonally one could adjust the timeouts for attaching to a semaphore
+    or shared memory segment
+  * in example a load of 800 processes/requests on a single instance on a 32
+    bit system causes 750 up to 775 requests to fail if the the timeout
+    for attachments is defined by three seconds
+  * increasing this timeout with ten reduces the failure by about 70 percent
+    additionally the number of tries would lead to a failurereduction as well
+    * this behavior can be reproduced using the tool stored in
+      src/bugs/2016-00001, it simply allows you to invoke multiple (background)
+      processes that requests the example src/examples/shm/shmhandler.php
+      using curl
+    * comparing pure http with secure http connections it shows that the
+      overhead - because of the three way handshake in conjunction with key
+      exchanges and en-/decryption - in https connections creates an advantage
+      due to the generated delay before passing data on to the interpreter
+      module in a way failures were reduced by five percent
+  * to avoid such an high amount of failures the attaching and detaching
+    mechanisms differ between and read and write access. only during writing
+    access any newly created reading access should be locked. additionally
+    any previously created reading access should have finished before writing
+    to any shared memory segment to keep the provided segment data consistent
+  * regarding this one could think of threads which are able to synchronize
+    actions but as this functionality is currently not available in PHP and
+    is probably just achievable through third party software (PECL pthreads
+    >= 2.0.0) which would massively blow up any bundle causing restrictions
+    using this piece of software a threading solution is not bound to this
+    software yet
+
+
+Templates
+---------
+
+* unique container identifier/targets for the modules map
+* module mask map
+  * each target node gonna be inserted into need to be present, at least empty
+* layout (css) is completely distinct from the template
+  * each template should at least include the following stylesheet link
+      <link id="css_main" rel="stylesheet" type="text/css" href="whatever">
+  * the template class will adjust the @href attribute so it points to the css 
+    file of the template relative to the css directory PATH_CSS where all css
+    files must go 
+  * a symbolic link is created to each template css file upon loading to avoid 
+    increasing page loads when e.g. copying huge css files to PATH_CSS instead
+  * this way it is possible to override a templates file temporary by bending 
+    the present symbolic link
+  * every layout dependant classes/ids can be determined from the css used
+* necessary template files for each template
+  * TEMPLATENAME.html 	- main HTML template file
+  * TEMPLATENAME.css 	- main CSS layout file
+  * error.html 		- used to display global errors
+  * map.xml 		- modules mask map
+* ??? additional css files for modules
+
+
+Languages
+---------
+
+* the main language handling is bound to the core 
+  * when defining a language module its language configurations need to be 
+    merged
+* can be defined as module/extensions, initial language is handled by the core
+  * e.g lang-en, lang-fr, lang-is, ...
+  * must contain all files that contain static texts, e.g.
+    * languages.xml
+    * lang.xml
+    * errors.xml
+    * LANG.xml 
+    * ...
+* appending language
+  * extend/activate //group[@name="languages"] in core.xml
+  * add a language file in lang/LANGABBR.xml containing all elements set
+    like in other language files
+  * add/append a LANGABBR tag to each error message definition in errors.xml
+* NOTE: those files mentioned are probably going to be merged with module
+        files when module system is implemented. 
+* language integration for form elements
+  * regex : "/^\\\$language->get\('[a-zA-Z_]+'\)$/"
+  * language modules should only consist of lang files
+  * the core should contain the interfaces/classes needed
+  * all values from default lang file should be stored in additional lang
+    files as well 
+  * static lang texts from modules need to be joined with present lang files
+    e.g. de.xml with mod/de.xml following the module tree
+    * this forces implementaion of a maintainer structure for modules
+    * when a module extends the initial language one need to contact the
+      maintainer of any language extension letting him add the unknown
+      values
+    * any maintainer can be determined by the gpg key provided for a module
+    * for this fact of internationalization english should be the initial 
+      language
+* when importing a language module all (initial) language elements need to be 
+  translated
+  * installing another language into the database contains the following 
+    operations for e.g a language module "lang-de"
+    * INSERT INTO h_core_language ...
+    * CREATE TABLE h_lang_de_langtext_de ...
+    * based on relations between the initial language
+      * other module tables relations could be derived from *r_h_core_langtext_en*
+      * CREATE TABLE h_lang_de_r_langtext_de ...
+  * h_core_language - contains all languages installed so far
+    * the langtext table reference should be stored in there as well
+  * h_lang_de_langtext_de - main language values, need to be translated from en
+  * h_lang_de_r_h_lang_de_langtext_de_h_MOD_TAB
+    * relation between any other module tables
+    * e.g. h_lang_de_r_h_lang_de_langtext_de_h_event_event
+      * relation between table event of module "event" and its target lang
+  * cascades/triggers are needed to avoid different language states
+    * e.g. when inserting an event name into another language's tables a dummy
+      value should be inserted to mark translation requests
+    * translation can be done afterwards via a frontend module "lang-translate"
+      or manually by keeping the reference to the origin table in mind before
+      inserting it into the language relation
+  * designing the language import this way it is possible
+    * to completely disjunct language modules
+    * to perform (fulltext) searches for every entry made in the future only
+      based on the language tables
+    * to design translator groups with restriction to the langtext tables
+    * to easy remove language modules and its database contents
+      * DELETE FROM h_core_language WHERE lab = "de";
+      * DROP TABLE h_lang_de_langtext_de;
+      * foreach table in the (mysql) database catalog being a relation to the 
+        language table h_lang_de_langtext_de  
+        * information on (mysql) tables are stored in the db information_schema
+        * SELECT table_schema, table_name FROM tables WHERE table_schema = "..." 
+          AND table_name LIKE '%r_h_lang_de_langtext_de%';
+        * DROP TABLE ... 
+    * language tables could become huge so there is probably need to take some
+      kind of partitioning into account
+
+
+Building masks or HTML code
+---------------------------
+
+* MaskLoader
+  * Maskloader::load(...);
+  * available core masks
+    * exception/global.php
+    * exception/local.php
+  * as it returns "htmlentities(ob_get_clean())" including evaluated masks
+    only work properly in the following scenarios
+    * echo'd string concatenation like 
+      * echo "STH TO ECHO".MaskLoader::load(...)
+    * or in case of template inclusion where MaskLoader is called in
+      * Template::build() and passed onto Template::add()
+
+* Template
+  * mainly all MaskLoader inclusions should be done via the template config
+    * especially sub masks should be inserted regarding the mask order in case
+      a mask loaded provides additional anchors to load other masks at
+  * $template->add(MaskLoader::load(...), ...);
+
+
+Notes on forms
+--------------
+
+* form submissions 
+  * methods are restricted to "post"
+  * every get parameter can be defined as post parameter via hidden input
+  * actions are restricted to empty strings to avoid $_GET being filled
+  * setting a "route" parameter in load balanced environments can be done
+    via cookies and kind of sticky sessions
+* check data send
+  * triple stage verification - filter,sanitize,validate
+  * Filter
+    * check (query) input 
+  * Sanitize
+    * remove invalid signs
+  * Validator
+    * always pass filtered and sanitized input
+    * check against regex in e.g. form/mask/action definitions
+* form element definition vs. result set values
+  * e.g. regex="[a-z]+" but table.column type is integer
+* value definition, data passing on to form elements
+  * static - via @value in form element definition
+  * dynamic - via InputElement::build($data)
+* database result set
+  * element enumeration in resultset
+    * avoids id injection on submit to override different entries
+    * naming of elements = MODNAME.FORMNAME.ELTYPE.(ROW.COL|NUM)[.x|.y]
+      where ROW binds to the ENUM value in the result set
+    * global elements contain NUM but are kind of static definitions so no
+      need to bind them to ENUM
+  * (open) transaction upon edit start
+    * avoids mixing enumerations with entries meanwhile inserted/modified
+  * mapping between result set and form element entries via "table.colname"
+    * in select statements selected values need to be named explicitly
+      * "select table.col from table;" maps to <element name="table.col" .. />
+      * skip build inclusion it mapping is notsucessful 
+      * if result element does not exist include non editable
+    * otherwise first "from" part will be referenced as "table." prefix as
+      PDO does not provide a way to create result sets with separating table
+      names upon joins with equal on tables with equal names
+
+
+Security
+--------
+
+* query injection
+  * authorized session, action tokens
+    * user is authenticated before being allowed to submit forms
+    * action tokens are session and therefor user/device/ip bound
+  * only session highjacking in conjunction with ip spoofing and password 
+    stealing would allow an arbitrary user to fake queries in the name of
+    someone
+  * TODO: grid forms number of entries
+    * probably as well as id checking on form submission via transactions
+  * TODO: forms, check for disabled/hidden elements
+    * when there are some disabled/hidden elements there contents is not allowed
+      to be changed
+* xss
+  * validator/escapor
+  * filter/sanitizer and flag FILTER_FLAG_ENCODE_{LOW,HIGH}
+  * htmlspecialchars/urlencode
+* session hijack
+  * scenario: usrcred/sid-theft + second con
+  * session bound ip/clientfp changing observation
+  * ??? double con avoidance
+* xsrf
+  * tokenizer + session/usercred
+* referer
+  * referer/hostname mod before exception handling
+  * origin policy
+* sql
+  * statements/validator
+* crawlers
+  * especially for images
+  * request timing analysis
+* any parameter validations should be done using the internal validator
+  * core\util\param\validator.class.php
+  * class checks should use Validator::isclass(), see Testing section
+  * classes that to not need to use the validator
+    * test classes
+    * autoloader, autoloadngdevisor - would need to require it first
+* break in attempts
+  * core/mods modification detection (via module signatures) will cause 
+    external files placed inside the application directories to be detected
+* ...
+
+
+Deployment
+----------
+* bins/deploy.sh
+  * when deploying productive some configuration and examples folders will be
+    remove
+    * conf/doxygen
+    * conf/phpunit
+    * main/examples
+* unit and other application tests will be invoked on deployment but the 
+  corresponding files will be excluded
+  * bins/
+  * dump/
+  * ptch/
+  * test/
+
+
+Modifying the CHANGELOG
+-----------------------
+
+$ export DEBFULLNAME="Marc Bredt"; export DEBEMAIL="marc.bredt@gmail.com"
+$ dch -c trunk/CHANGELOG --package heili --distribution stable --create -v 0.0.2
+$ dch -c trunk/CHANGELOG -r
+$ dch -c trunk/CHANGELOG -i
+ 
+
+Writing DTDs
+------------
+
+* each XML's root tag needs to be able to contain an optional attribute called
+  "distinct", it is used to figure out if nodes are matched when joining xml
+  documents, see XMLDocument::merge(), XMLDocument::join()
+  * <!ATTLIST root ... distinct CDATA #IMPLIED>
+
+
+Testing
+-------
+
+* verifying class checks, necessary when e.g. moving classes otherwise
+  undefined behavior meaning code pathes are probably not going to be
+  traversed
+  * verify_classes_check
+  * currently avoid newlines in validator class checks to be able to grab the
+    target classes
+* phpunit for unit and simple scenario tests
+  * class file [Cc]lass[Nn]ame.class.php
+  * corresponding testfile [Cc]lass[Nn]ame[Tt]est.test.class.php
+* javascript
+  * grunt
+  * jasmine
+* hinject for request scenarios/tests
+  * Template testing, send specified requests and check for xpathes present
+* manual xml validation
+  * xmllint --noout --postvalid --dtdvalid file.dtd file.xml
+    * errors then will lead to output
+  * no doctype definition necessary in xml to avoid path errors
+    * XMLDocument will create a validatable doc if $validate set to true
+  * standalone="no"
+
+
+Metrics
+-------
+
+* LOC
+  * find -type f \
+          -not -path "./.svn/*" \
+            -and -not -path "./.git/*" \
+            -and -not -path "./src/bugs/*" \
+          -exec wc -l {} +
+* further work
+  * phpunit extensions for (C0-4,...)
+
+
+Documentation
+-------------
+* bins/document.sh
+
+
+Management
+----------
+* module management
+  * detect but only allow usage/handling of intialized modules
+  * types
+    * module - addtional functionality
+      * e.g. complete admin frontend or a news/event management
+    * template - layout and theme/style
+      * e.g. heili mobile template
+    * extension - extends modules like
+      * e.g. more language entries or admin module features
+  * h_core_modules - store addtional modules
+    * contains only additional modules, template or extensions
+    * "auth, user, role, lang" need to belong to the core to provide 
+      restrictive to any front or backend
+  * reinitilization, see sql management
+* sql management
+  * module tables SYSPREFIX_MODULE_TABLE, e.g. h_core_modules
+    * h_core_modules should contain informations on relations,indexes and
+      whatever database relevant elements
+    * transactional management is necessary here to "dry run" removal, update
+      or insertion processes of tables, indexes
+  * whenever a module is initialized database tables or elements (indexes,
+    views) will be prefixed with SYSPREFIX_MODULE_ to avoid module conflicts
+  * after initialization of a e.g. a "comment" module there is need to decide
+    what to comment
+  * so upon module initialization there could be made a suggestion to which 
+    present tables a relation should be made, e.g. to "news"
+  * this implies the ability to reinit modules to automatically create 
+    additional relations after other modules e.g. "events" had been added
+  * relations to other module table should look like
+    * SYSPREFIX_MODULE_r_RELFROM_RELTO 
+    * e.g. h_comment_r_h_comment_h_news 
+    * those relations consist of primary keys of RELFROM and RELTO by setting
+      up foreign keys
+* modules to design as external ones
+  * lang, role, page, location
+* replacing main auth module with an other one like e.g. auth-ldap
+  * via template (map)  
+  * e.g. <mask active="y" name="c_auth_login" module="auth-ldap" 
+               target="//td[@id=&quot;c_auth_login&quot;]" 
+               ttype="node" index="0" mask="auth" template="login" type="php" />
+* fund management
+  * gainable via community 
+  * gainable via purchasing
+

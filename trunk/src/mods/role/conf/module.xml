@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<module name="role" version="0.0.1">
+  <priority>optional</priority>
+  <sections>
+    <section>frontend</section>
+    <section>database</section>
+  </sections> 
+  <size>10000</size>
+  <maintainers>
+    <maintainer>
+      <name>Marc Bredt</name>
+      <mail>marc.bredt@gmail.com</mail>
+    </maintainer>
+    <maintainer>
+      <group>Heili frontend group</group>
+      <mail>heili-frontend@kleinkiesow.lo</mail>
+    </maintainer>
+  </maintainers>
+  <description>
+    This module provides a complete role management including a database backend
+    and corresponding mask to display, select or manage roles.
+  </description>
+  <homepage>http://www.berlin.lo</homepage>
+  <depends>
+    <package type="system" name="php"  version=">=5.0.0" />
+    <package type="module" name="core" version=">=0.0.1" />
+    <package type="module" name="group" version=">=0.0.1" />
+  </depends>
+  <suggests />
+  <breaks />
+</module>

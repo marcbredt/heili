@@ -7,10 +7,6 @@
   <!-- TESTSUITES -->
   <testsuites>
 
-    <!-- NOTE: the active attribute required for ant script to figure 
-               out which suites should be run
-               see src/util/build/phpunit-getsuites -->
-
     <!-- NOTE: newlined pathes for <directory>-tags do not work
                because the containing path is not trimmed -->
 
@@ -22,27 +18,25 @@
                manage the testsuite path in a way all applications 
                are regarded. -->
 
-    <testsuite name="@confvalue-doxygen-pjname@-autoloader" active="y">
-
-      <directory suffix=".test.class.php" phpVersion="5.6.12" phpVersionOperator="&gt;=">@confvalue-phpunit-indir@/core/util/log</directory>
-
+    <testsuite name="heili-autoloader">
+      <directory suffix=".test.class.php" phpVersion="5.6.12" phpVersionOperator="&gt;=">test/core/util/log</directory>
     </testsuite>
 
   </testsuites>
 
   <!-- LOGGING -->
   <logging>
-    <log type="coverage-html" target="@phpunit-log-dir@/coverage-html" lowUpperBound="50" highLowerBound="90"/>
-    <log type="coverage-clover" target="@phpunit-log-dir@/coverage-clover.xml"/>
-    <log type="coverage-crap4j" target="@phpunit-log-dir@/coverage-crap4j.xml"/>
-    <log type="coverage-php" target="@phpunit-log-dir@/coverage-log.php"/>
-    <log type="coverage-text" target="@phpunit-log-dir@/coverage-text.log" showUncoveredFiles="false" />
-    <log type="json" target="@phpunit-log-dir@/log.json"/>
-    <log type="plain" target="@phpunit-log-dir@/plain.log"/>
-    <log type="tap" target="@phpunit-log-dir@/log.tap"/>
-    <log type="junit" target="@phpunit-log-dir@/junit.xml" logIncompleteSkipped="false"/>
-    <log type="testdox-html" target="@phpunit-log-dir@/testdox-html.html"/>
-    <log type="testdox-text" target="@phpunit-log-dir@/testdox-text.log"/>
+    <log type="coverage-html" target="../../doc/phpunit/coverage-html" lowUpperBound="50" highLowerBound="90"/>
+    <log type="coverage-clover" target="../../doc/phpunit/coverage-clover.xml"/>
+    <log type="coverage-crap4j" target="../../doc/phpunit/coverage-crap4j.xml"/>
+    <log type="coverage-php" target="../../doc/phpunit/coverage-log.php"/>
+    <log type="coverage-text" target="../../doc/phpunit/coverage-text.log" showUncoveredFiles="false" />
+    <log type="json" target="../../doc/phpunit/log.json"/>
+    <log type="plain" target="../../doc/phpunit/plain.log"/>
+    <log type="tap" target="../../doc/phpunit/log.tap"/>
+    <log type="junit" target="../../doc/phpunit/junit.xml" logIncompleteSkipped="false"/>
+    <log type="testdox-html" target="../../doc/phpunit/testdox-html.html"/>
+    <log type="testdox-text" target="../../doc/phpunit/testdox-text.log"/>
   </logging>
 
 </phpunit>

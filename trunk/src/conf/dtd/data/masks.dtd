@@ -1,0 +1,6 @@
+<!ELEMENT root (masks+)>
+<!ELEMENT masks (mask*)>
+<!ELEMENT mask EMPTY>
+<!ATTLIST mask name CDATA #REQUIRED active CDATA #REQUIRED
+               source CDATA #IMPLIED target CDATA #IMPLIED
+               roles CDATA #REQUIRED> 

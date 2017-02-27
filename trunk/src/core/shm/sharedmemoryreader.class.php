@@ -1,10 +1,10 @@
 <?php
 
 namespace core\shm;
-use core\util\Reader as Reader;
+use core\util\io\Reader as Reader;
+use core\util\param\Validator as Validator;
 use core\util\string\StringUtil as StringUtil;
-use core\object\LoggableObject as LoggableObject;
-use core\exception\ParamNotValidException as ParamNotValidException;
+use core\exception\param\ParamNotValidException as ParamNotValidException;
 use core\exception\shm\PayloadExtractionException as PayloadExtractionException;
 use core\exception\shm\DelimiterNotFoundException as DelimiterNotFoundException;
 
@@ -14,7 +14,7 @@ use core\exception\shm\DelimiterNotFoundException as DelimiterNotFoundException;
  * @author Marc Bredt
  * @see SharedMemorySegment::set_shm_seg_layout()
  */
-class SharedMemoryReader extends LoggableObject implements Reader {
+class SharedMemoryReader implements Reader {
 
   /** 
    * Element which shoud be read, Could be anything like a file, stream,
@@ -42,8 +42,8 @@ class SharedMemoryReader extends LoggableObject implements Reader {
    * memory segment.
    */
   public function __construct($seg = null) {
-    if(strncmp(gettype($seg),"object",6)==0
-       && strncmp(get_class($seg),"core\shm\SharedMemorySegment",26)==0)
+    if(Validator::isa($seg,"object")
+       && Validator::isclass($seg,"core\shm\SharedMemorySegment"))
       $this->element = $seg;
     else
       $this->element = null;
@@ -68,16 +68,18 @@ class SharedMemoryReader extends LoggableObject implements Reader {
   public function read($index = -1, 
                        $skey = "", $kpos = -1, $val = null, $full = true) {
     
+    global $filelogger;
+
     $rs = "";
-    $this->log(__METHOD__.": idx=%, skey=%, kpos=%, val=%, full=%", 
+    $filelogger->log("idx=%, skey=%, kpos=%, val=%, full=%", 
                array($index,$skey,$kpos,StringUtil::get_object_string($val),
                      $full));
  
     // reading the whole contents if index is not set and the upcoming
     // parameters either
-    if(strncmp(gettype($index),"integer",7)==0 && $index == -1
-       && strncmp(gettype($skey),"string",6)==0 && strlen($skey)==0
-       && strncmp(gettype($kpos),"integer",7)==0 && $kpos==-1) {
+    if(Validator::isa($index,"integer") && $index == -1
+       && Validator::isa($skey,"string") && strlen($skey)==0
+       && Validator::isa($kpos,"integer") && $kpos==-1) {
 
       $s = shmop_read($this->element->get_shm_seg_id(),0,
                       $this->element->get_shm_seg_size());
@@ -85,15 +87,14 @@ class SharedMemoryReader extends LoggableObject implements Reader {
 
     // searching if the index is not set but parameters 2 to 5 are
     // but not with default values
-    } else if(strncmp(gettype($index),"integer",7)==0 && $index == -1
-            && strncmp(gettype($skey),"string",6)==0 && strlen($skey)>0
-            && strncmp(gettype($kpos),"integer",7)==0 && $kpos>-1) {
+    } else if(Validator::isa($index,"integer") && $index == -1
+            && Validator::isa($skey,"string") && strlen($skey)>0
+            && Validator::isa($kpos,"integer") && $kpos>-1) {
 
       $rs = $this->search($index,$skey,$kpos,$val,$this->get_search_type());
 
     // reading an index is a bit more complex
-    } else if(strncmp(gettype($index),"integer",7)==0
-              && $index > -1) {
+    } else if(Validator::isa($index,"integer") && $index > -1) {
 
       $xcontents = $this->get();
       $xcli = count($xcontents)-1;
@@ -149,8 +150,7 @@ class SharedMemoryReader extends LoggableObject implements Reader {
     //       performance reasons, append it somewhere else if necessary
 
     // return element at $index as array if $index is valid
-    if(strncmp(gettype($index),"integer",7)==0 
-       && $index>-1 && $index<count($xcontents)) 
+    if(Validator::isa($index,"integer") && $index>-1 && $index<count($xcontents))
       return array_slice($xcontents,$index,1,1); // preserve indexes
 
     // or return all elements as array otherwise
@@ -169,26 +169,28 @@ class SharedMemoryReader extends LoggableObject implements Reader {
    */ 
   private function get_payload($entry = 0){
 
+    global $filelogger;
+
     $el = null;
 
     // if an index was provided via $entry
-    if(strncmp(gettype($entry),"integer",7)==0) {
+    if(Validator::isa($entry,"integer")) {
 
       $el = $this->get($entry);
       if(count($el)!=1) {
-        $this->log(__METHOD__.": %", 
+        $filelogger->log("%", 
                    array(new PayloadExtractionException($this->element.", ".$el, 0)));
         throw(new PayloadExtractionException($this->element.", ".$el, 0));
       }
       $el = $el[$entry]; // get the entry string
  
     // if $entry is an valid entry itself
-    } else if(strncmp(gettype($entry),"string",6)==0) {
+    } else if(Validator::isa($entry,"string")) {
 
       // the layout must be valid  
       if(!StringUtil::has_layout($this->element->get_shm_seg_layout(), 
                                  $entry)) {
-        $this->log(__METHOD__.": %", 
+        $filelogger->log("%", 
                    array(new PayloadExtractionException($this->element.", ".$el, 1)));
         throw(new PayloadExtractionException($this->element.", ".$el, 1));
 
@@ -196,14 +198,14 @@ class SharedMemoryReader extends LoggableObject implements Reader {
       $el = $entry; // get the entry string
 
     } else {
-      $this->log(__METHOD__.": %", 
+      $filelogger->log("%", 
                  array(new ParamNotValidException("entry(int|string)=".gettype($entry))));
       throw(new ParamNotValidExcepton("entry(int|string)=".gettype($entry)));
 
     }
 
     // finally extract the payload if all conditions passed
-    if(strncmp(gettype($el),"string",6)==0) {
+    if(Validator::isa($el,"string")) {
 
       $olleft = StringUtil::get_offset_last(
                   $this->element->get_shm_seg_var_eleft(), $el);
@@ -242,12 +244,12 @@ class SharedMemoryReader extends LoggableObject implements Reader {
   public function search($index = -1, $skey = "", $kpos = 0, $kval = null,
                          $type = "native") {
 
-    if(strncmp(gettype($type),"string",6)==0
-       && strncmp($type,"native",6)==0) {
+    global $filelogger;
 
-      if(strncmp(gettype($index),"integer",7)==0
-         && strncmp(gettype($skey),"string",6)==0
-         && strncmp(gettype($kpos),"integer",7)==0) {
+    if(Validator::isa($type,"string") && Validator::equals($type,"native")) {
+
+      if(Validator::isa($index,"integer") && Validator::isa($skey,"string")
+         && Validator::isa($kpos,"integer")) {
 
         // get the element stored at $index or all on failure
         $elems = "";
@@ -288,12 +290,12 @@ class SharedMemoryReader extends LoggableObject implements Reader {
                 // it is passed it need to be checked
                 //$sv = $this->get_payload($k);
                 $sv = $this->get_payload($v);
-                if(strncmp($sv, serialize($kval), strlen($sv))==0) return $v;
+                if(Validator::equals($sv, serialize($kval))) return $v;
 
               }
 
             } else {
-              $this->log(__METHOD__.": %", 
+              $filelogger->log("%", 
                          array(new DelimiterNotFoundException("'".$dl."', ".$sub)));
               throw(new DelimiterNotFoundException("'".$dl."', ".$sub));
             }
@@ -304,7 +306,7 @@ class SharedMemoryReader extends LoggableObject implements Reader {
         return "";
 
       } else {
-        $this->log(__METHOD__.": %", 
+        $filelogger->log("%", 
                    array(new ParamNotValidException(
                            "index(int)=".gettype($index).
                            ", skey(string)=".gettype($skey).
@@ -316,15 +318,14 @@ class SharedMemoryReader extends LoggableObject implements Reader {
 
       } 
 
-    } else if(strncmp(gettype($type),"string",6)==0
-       && strncmp($type,"avltree",6)==0) {
+    } else if(Validator::isa($type,"string") && Validator::equals($type,"avltree")) {
 
       // TODO: probably use AVLTreeImplementation, see above $avltree
       // NOTE: probably just useful if there is a way to keep an already
       //       created avl object in a way restoring is not exhausting
 
     } else {
-        $this->log(__METHOD__.": %", 
+        $filelogger->log("%", 
                    array(new ParamNotValidException(
                            "type(string)=".gettype($type))));
         throw(new ParamNotValidExcepton(
@@ -354,8 +355,8 @@ class SharedMemoryReader extends LoggableObject implements Reader {
    * Set the search type. Defaults to "native".
    */
   public function set_search_type($type = "native") {
-    if(strncmp(gettype($type),"string",6)==0
-       && in_array($type,$this->get_supported_search_types(),true))
+    if(Validator::isa($type,"string") 
+       && Validator::in($type,$this->get_supported_search_types()))
       $this->search_type = $type;
     else
       $this->search_type = "native";

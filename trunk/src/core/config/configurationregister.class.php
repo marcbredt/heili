@@ -1,20 +1,16 @@
 <?php
 
 namespace core\config;
-use \core\register\Register as Register;
-use \core\object\SerializationMethods as SerializationMethods;
+use core\register\Register as Register;
+use core\util\param\Validator as Validator;
+use core\exception\register\RegisterException as RegisterException;
 
 /**
  * A register implementation to store configuraions loaded.
  * @author Marc Bredt
  * @see Register
  */
-class ConfigurationRegister extends Register implements SerializationMethods {
-
-  /**
-   * A logger for this class.
-   */
-  private $logger = null;
+class ConfigurationRegister extends Register {
 
   /**
    * This array maps unique configuration names to <a style="font-weight: bold;"
@@ -40,44 +36,36 @@ class ConfigurationRegister extends Register implements SerializationMethods {
    */
   public function insert($key = null, $obj = null) {
 
+    global $filelogger;
+
     // check if the key is a string
-    if (strncmp(gettype($key),"string",6)==0 && strncmp($key,"",1)!=0) {
+    if (Validator::isa($key,"string") && !Validator::equals($key,"")) {
       
       // check for a valid object passed as this class is a ConfigurationRegister
-      if (strncmp(gettype($obj),"object",6)==0 
-          && strncmp(get_class($obj),"core\config\Configuration",13)==0) {
+      if (Validator::isa($obj,"object") 
+          && Validator::isclass($obj,"core\config\Configuration")) {
 
         // check if an register entry exist but override the object anyways
-        if(!in_array($key,$this->reg)) $this->reg[] = $key;
+        if(!Validator::in($key,$this->reg)) $this->reg[] = $key;
         $this->map[$key] = $obj;
 
         return true;
 
       } else {
-        $this->logger->logge("%",array(
-          new \core\exception\register\InvalidRegisterObjectException(
-            "Object is invalid. Expected 'Configuration' got '".
-              (strncmp(gettype($obj),"object",6)==0 ? 
-                 substr(get_class($obj),strrpos(get_class($obj),"\\")+
-                   (preg_match("/\\\\/",get_class($obj)) ? 1 : 0)) : 
-                     gettype($obj))."'.")));
-        throw(new \core\exception\register\InvalidRegisterObjectException(
-                "Object is invalid. Expected 'Configuration' got '".
-                  (strncmp(gettype($obj),"object",6)==0 ? 
-                    substr(get_class($obj),strrpos(get_class($obj),"\\")+
-                      (preg_match("/\\\\/",get_class($obj)) ? 1 : 0)) : 
-                        gettype($obj))."'."));
+
+        $filelogger->log("%, object=%",
+                   array(new RegisterException("invalid object"),$object));
+        throw(new RegisterException("invalid object"));
+   
       }
 
     // if the key type does not equal 'string'
     } else {
-      $this->logger->logge("%",array(
-        new \core\exception\register\InvalidRegisterKeyException(
-          "Key is invalid. Expected 'string' got '".gettype($key)."' ".
-            "for ".var_export($key,true).".")));
-      throw(new \core\exception\register\InvalidRegisterKeyException(
-             "Key is invalid. Expected 'string' got '".gettype($key)."' ".
-               "for ".var_export($key,true)."."));
+  
+      $filelogger->log("%, key=%",
+                 array(new RegisterException("invalid key"),$key));
+      throw(new RegisterException("invalid key"));
+
     }
 
     return false;
@@ -90,17 +78,19 @@ class ConfigurationRegister extends Register implements SerializationMethods {
    */
   public function remove($key = null) { 
 
+    global $filelogger;
+
     // if $key is a string it must refer to $this->map
-    if (strncmp(gettype($key),"string",6)==0 && isset($this->map[$key])) {
+    if (Validator::isa($key,"string") && isset($this->map[$key])) {
 
         foreach($this->reg as $k => $v) {
-          if(strcmp($v,$key)==0) unset($this->reg[$k]);
+          if(Validator::equals($v,$key)) unset($this->reg[$k]);
         }
         unset($this->map[$key]);
         return true;
 
     // if it is an integer the $key must refer to $this->reg
-    } else if(strncmp(gettype($key),"integer",7)==0 && isset($this->reg[$key])) {
+    } else if(Validator::isa($key,"integer") && isset($this->reg[$key])) {
 
         unset($this->map[$this->reg[$key]]);
         unset($this->reg[$key]);
@@ -108,13 +98,11 @@ class ConfigurationRegister extends Register implements SerializationMethods {
 
     // otherwise throw a key exception
     } else {
-      $this->logger->logge("%",array(
-        new \core\exception\register\InvalidRegisterKeyException(
-          "Key is invalid. Expected 'string' or 'integer' ".
-            "got '".gettype($key)."' for ".var_export($key,true).".")));
-      throw(new \core\exception\register\InvalidRegisterKeyException(
-              "Key is invalid. Expected 'string' or 'integer' ".
-                "got '".gettype($key)."' for ".var_export($key,true)."."));
+   
+      $filelogger->log("%, key=%",
+                 array(new RegisterException("invalid key"),$key));
+      throw(new RegisterException("invalid key"));
+
     } 
 
     return false;
@@ -127,53 +115,45 @@ class ConfigurationRegister extends Register implements SerializationMethods {
    *         otherwise null
    */
   public function get($key = "") {
+
+    global $filelogger;
     
     // if the $key is a string it refers to $this->map
-    if(strncmp(gettype($key),"string",6)==0 && strncmp($key,"",1)==0
+    if(Validator::isa($key,"string") && Validator::equals($key,"")
        && isset($this->map[$key])) {
          return $this->map[$key];
     
     // if $key is an integer it refers to $this->reg 
-    } else if(strncmp(gettype($key),"integer",7)==0 ) {
+    } else if(Validator::isa($key,"integer")) {
       return $this->map[$this->reg[$key]];
 
     // throw a key exception
     } else {
-      $this->logger->logge("%",array(
-        new \core\exception\register\InvalidRegisterKeyException(
-          "Key is invalid. Expected 'string' or 'integer' ".
-            "got '".gettype($key)."' for ".var_export($key,true).".")));
-      throw(new \core\exception\register\InvalidRegisterKeyException(
-              "Key is invalid. Expected 'string' or 'integer' ".
-                "got '".gettype($key)."' for ".var_export($key,true)."."));
+
+      $filelogger->log("%, key=%",
+                 array(new RegisterException("invalid key"),$key));
+      throw(new RegisterException("invalid key"));
+
     }
 
   }
 
   /* 
-   * methods for SerializationMethods
+   * Methods for serialization
    * __sleep/__wakeup to exclude e.g. logger from being serialized 
    * and to reintialize ressources/objects that hold resources
    */
 
   /**
-   * Interfere during the serialization of this object and avoid
-   * pinning resources e.g. open file handles onto serialized data
+   * This function overrides the serialization method as there are other 
+   * attributes ($reg,$position) are needed to be stored along the inheritage 
+   * chain.
    * @return data that can be serialized
    */
   public function __sleep() {
     return array('position','reg','map');
   }
  
-  /**
-   * Interfere during deserialization and reinitiate data that can
-   * contain resources which cannot be serialized liked DOMDocument
-   * or file handles.
-   */
-  public function __wakeup() {
-    $this->logger = new \core\util\log\FileLogger("ConfigurationRegister");
-  }
-
 }
 
 ?>

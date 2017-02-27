@@ -5,6 +5,7 @@ use \Exception as Exception;
 
 /**
  * Class used to throw an exception in case a shared memory access is invalid.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class InvalidAccessTypeException extends Exception {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <drivers>
+    <driver name="mysqli" class="module\mysqlidriver\db\driver\MySQLiDriver" />
+  </drivers>
+</root>

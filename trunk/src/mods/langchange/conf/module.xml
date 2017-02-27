@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<module name="langchange" version="0.0.1">
+  <priority>optional</priority>
+  <sections>
+    <section>frontend</section>
+  </sections> 
+  <size>10000</size>
+  <maintainers>
+    <maintainer>
+      <name>Marc Bredt</name>
+      <mail>marc.bredt@gmail.com</mail>
+    </maintainer>
+    <maintainer>
+      <group>Heili language group</group>
+      <mail>heili-language@kleinkiesow.lo</mail>
+    </maintainer>
+  </maintainers>
+  <description>
+    A simple frontend to change the application's language.
+  </description>
+  <homepage>http://modules.heili.lo</homepage>
+  <depends>
+    <package type="system" name="php"  version=">=5.0.0" />
+    <package type="module" name="core" version=">=0.0.1" />
+  </depends>
+  <suggests />
+  <breaks />
+</module>

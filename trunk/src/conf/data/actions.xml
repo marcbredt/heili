@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <!-- 
+    as form data is defined in the way MODULE.FORMNAME.[g|e].[0-9]*(.[0-9])+ 
+      there is additionally need to define the source of the action 
+    using those definitions one need to take care of the elements order set
+      inside the form configuration
+    
+    another way could be a "defines" flag to determine the action element
+      when recognizing a request with e.g. "core.login" elements those refer
+      to the configurtion conf/html/form/login.xml
+      if such a file does not exist drop those request parameters
+    
+    currently only actions with the following regex ^[a-z]+$ are allowed
+    currently only forms with the following regex ^[a-z]+.[a-z]+$ are allowed
+      see core\session\handler\ActionHandler 
+   
+  -->
+  <actions>
+    <action active="y" name="login" form="core.login"
+            handler="core\session\handler\ActionHandler" 
+            depends="email,password,token" />
+    <!--
+    <action name="logout" depends="token" />
+    <action active="y" name="changelang" form="langchange.mlang" 
+            handler="module\"
+            depends="language,token" />
+    <action name="changepage" depends="page,token" />
+    <action name="selectsurvey" depends="sname,token" />
+    <action name="abortsurvey" depends="sname,token" />
+    <action name="submitsurvey" depends="sname,token" />
+    <action name="confirmsurvey" depends="sname,token" />
+    -->
+  </actions>
+</root>

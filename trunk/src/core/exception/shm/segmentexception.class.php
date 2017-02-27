@@ -6,6 +6,7 @@ use \Exception as Exception;
 /**
  * Class used to throw an exception in case errors regarding shared memory
  * segments occured.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class SegmentException extends Exception {
@@ -21,6 +22,8 @@ class SegmentException extends Exception {
   const SHM_SEG_WRITE_FAILED = 4;
 
   const SHM_SEG_ATTACH_FAILED = 5;
+
+  const SHM_SEG_INVALID = 6;
 
   /**
    * Create a SegmentException.
@@ -63,6 +66,11 @@ class SegmentException extends Exception {
           parent::__construct($msg_prefix.
                                 " (".$message.", SHM_SEG_ATTACH_FAILED)",
                               self::SHM_SEG_ATTACH_FAILED, $previous);
+        break;
+      case 6: 
+          parent::__construct($msg_prefix.
+                                " (".$message.", SHM_SEG_INVALID)",
+                              self::SHM_SEG_INVALID, $previous);
         break;
       default:
           parent::__construct($msg_prefix.

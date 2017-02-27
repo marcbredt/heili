@@ -1,0 +1,3 @@
+<!ELEMENT root (version+)>
+<!ELEMENT version (#PCDATA)>
+<!ATTLIST version module CDATA #REQUIRED>

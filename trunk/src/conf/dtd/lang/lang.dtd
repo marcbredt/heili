@@ -1,0 +1,6 @@
+<!ELEMENT root (language+)>
+<!ELEMENT language (element*)>
+<!ATTLIST language id CDATA #REQUIRED>
+<!ELEMENT element (#PCDATA)>
+<!ATTLIST element active CDATA #REQUIRED name CDATA #REQUIRED>
+ 

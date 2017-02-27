@@ -1,6 +1,7 @@
 <?php
 
 namespace core\util\string;
+use core\util\param\Validator as Validator;
 
 /**
  * This class is used for string operations.
@@ -27,6 +28,22 @@ class StringUtil {
     else
       return $character;
   }
+
+  /**
+   * Provides a way to escape a set of characters in a string.
+   * @param $escapables characters or substrings going to be escaped
+   * @param $string target in which the $escapables will be escaped
+   * @return a string which all $escapables escaped
+   */
+  public static function escape_all($escapables = array(), $string = ""){
+    foreach($escapables as $e) {
+      if(Validator::equals("/",$e)) 
+        $string = preg_replace("/\\".$e."/","\\\\".$e, $string);
+      else 
+        $string = preg_replace("/".$e."/","\\".$e, $string);
+    }
+    return $string;
+  }
  
   /**
    * Check if a string has a specific layout.
@@ -35,8 +52,7 @@ class StringUtil {
    * @return true if $string matches $layout
    */
   public static function has_layout($layout = "", $haystack = "") {
-    if(strncmp(gettype($layout),"string",6)==0
-       && strncmp(gettype($haystack),"string",6)==0)
+    if(Validator::isa($layout,"string") && Validator::isa($haystack,"string"))
       return preg_match("/".$layout."/", $haystack);
     return false;
   }
@@ -49,8 +65,7 @@ class StringUtil {
    * @see SharedMemorySegment
    */
   public static function get_offset_last($needle = "", $haystack = "") {
-    if(strncmp(gettype($needle),"string",6)==0
-       && strncmp(gettype($haystack),"string",6)==0)
+    if(Validator::isa($needle,"string") && Validator::isa($haystack,"string"))
       $lp = strrpos($haystack,$needle);
       
     return ($lp!==false ? $lp : -1);
@@ -64,8 +79,7 @@ class StringUtil {
    * @see SharedMemorySegment
    */
   public static function get_offset_first($needle = "", $haystack = "") {
-    if(strncmp(gettype($needle),"string",6)==0
-       && strncmp(gettype($haystack),"string",6)==0)
+    if(Validator::isa($needle,"string") && Validator::isa($haystack,"string"))
       $fp = strpos($haystack,$needle);
       
     return ($fp!==false ? $fp : -1);
@@ -84,6 +98,19 @@ class StringUtil {
   }
 
   /**
+   * Encode binary strings. Mainly used to avoid filling logs with binary
+   * data.
+   * @return string representing $binary as hexadecimal number 
+   */
+  public static function get_hex_string($string = "") {
+    if(Validator::isa($string,"string")) {
+      $h = unpack("H*",$string);
+      return array_shift($h);
+    }
+    return "";
+  }
+
+  /**
    * This function is used to get an object's value. This function is often
    * used in conjunction with exception, especially ParamNotValidException
    * when one wants to determine or log an objects class or its type.
@@ -91,8 +118,17 @@ class StringUtil {
    * @return the object's type determined
    */
   public static function get_object_value($o = null) {
-    return (strncmp(gettype($sem),"object",6)==0 ? get_class($sem) : 
-            gettype($sem));
+    return (Validator::isa($o,"object") ? get_class($o) : gettype($o));
+  }
+
+  /**
+   * Checks if an string contains another string.
+   * @param $needle string to search for
+   * @param $haystack stack to search in
+   * @return true if $haystack contains $needle, otherwise false
+   */
+  public static function contains($haystack = "", $needle = "") {
+    return (strpos($haystack, $needle) !== false);
   }
 
 }

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <!-- 
+    NOTE: all keys that are not defined in here or not referencing any superglobal 
+          attribute in files will be dropped upon parameter validation.
+    NOTE: this is primary used to validate data on form submission where each 
+          query 'stree' should define the values it is going to use ('uses'). 
+    NOTE: with this in mind it is then possible to validate form data via 
+          'column-name_value' tupel using the default statement 'datatypes' to 
+          validate their contents after setting the appropriate superglobal e.g. 
+          $_GET/$_POST
+    NOTE: each file needs to be present relative to the main configuration
+          directory e.g. "../conf/", this value need to be set via config
+  -->
+  <superglobals>
+
+    <superglobal active="y" name="globals"	policy="drop" 
+                 file="data/superglobals/globals.xml" />
+    <superglobal active="n" name="get"		policy="drop" 
+                 file="data/superglobals/get.xml" />
+    <superglobal active="n" name="post"		policy="drop" 
+                 file="data/superglobals/post.xml" />
+    <superglobal active="y" name="cookie"	policy="drop" 
+                 file="data/superglobals/cookie.xml" />
+    <superglobal active="n" name="files"	policy="drop" 
+                 file="data/superglobals/files.xml" />
+    <superglobal active="n" name="env"		policy="drop" 
+                 file="data/superglobals/env.xml" />
+    <superglobal active="n" name="request"	policy="drop" 
+                 file="data/superglobals/request.xml" />
+    <superglobal active="n" name="server"	policy="drop" 
+                 file="data/superglobals/server.xml" />
+    <superglobal active="n" name="session"	policy="drop" 
+                 file="data/superglobals/session.xml" />
+
+  </superglobals>
+
+</root>

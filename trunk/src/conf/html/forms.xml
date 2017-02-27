@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <forms>
+    <form active="y" module="core" name="login" policy="drop">login.xml</form>
+  </forms> 
+</root>

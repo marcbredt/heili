@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <session>
+
+    <!-- error containing local exceptions -->
+    <key name="error" type="array" /> 
+    <!-- for each different form a token, login/confirm -->
+    <key name="tokens" type="array" /> 
+    <!-- serialized user object -->
+    <key name="user" type="string" />
+    <!-- language key -->
+    <key name="language" type="string" />
+    <!-- current page for any mask, used for dataset view -->
+    <key name="page" type="string" />
+    
+    <!-- catalog size, used for page calculation -->
+    <!--<key name="catasize" type="string" />-->
+    <!-- page size, used for dataset calculation -->
+    <!--<key name="pagesize" type="string" />-->
+    <!-- survey -->
+    <!--<key name="survey" type="array" />-->
+
+  </session>
+</root>

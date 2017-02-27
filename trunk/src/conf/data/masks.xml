@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <!-- 
+    * each mask is accessible if a user has at least the role mentioned 
+    * source and target define where data comes from and goes to
+    * necessary for e.g when static forms are created from xml but their 
+      result should be stored in the database
+    * in such cases source="file", target="db" an additional atribute
+      "sfile" is used to define the form data specifiyng the target columns
+      to be able to check values passed againt their database target
+      column type
+    * "db" means data comes from the database and therefor the "uses" attribute
+      in the statements file is used to check input data against the column
+      type of each "uses" column defined
+    * it is allowed to create complex form data variables passing some kind
+      of request parameters in a tree structure like source="s1|s2"
+    * additionally if source type "db" is set the merged "uses" attributes
+      provide the form data structure allowed to be passed which e.g. creates
+      an allowed form variable for database statement tree source="s1|s2" -
+      having uses="t1.a" and uses="t2.b" set - that can look like
+        COLUMN_VALUE[_COLUMN_VALUE]*=COLUMN_VALUE or more specific
+        a_VALUE=b_VALUE 
+      where VALUE is always checked against the corresponding column type
+      which is in this case the type of t1.a and t2.b 
+    * mask names must validate the form MODULE:MASK:TEMPLATE:TYPE
+  -->
+  <masks>
+
+    <!-- auth masks -->
+    <mask name="core:auth:login:php" active="y" source="db" roles="*" />
+    <mask name="core:auth:logout:php" active="y" roles="*" />
+
+    <!-- role masks -->
+    <mask name="core:role:select:php" active="y" source="db" roles="admin,user" />
+
+    <!-- lang masks -->
+    <mask name="core:lang:lang:php" active="y" source="db" roles="*" />
+
+    <!-- masks for module survey (w/o mask subfolder) -->
+    <!--
+    <mask name="survey::confirm:php" active="y" source="db" target="db" roles="admin,user" />
+    <mask name="survey::link:php" active="y" source="db" target="db" roles="admin,user" />
+    <mask name="survey::list:php" active="y" source="db" target="db" roles="admin,user" />
+    <mask name="survey::survey:php" active="y" source="db" target="db" roles="admin,user" />
+    -->
+
+  </masks>
+
+</root>

@@ -1,0 +1,38 @@
+<!ELEMENT root (module+)>
+
+<!ELEMENT module (dependencies+,config*,includes*)>
+<!--<!ELEMENT module (dependencies+,config+,rights+,masks+,actions+,includes+,
+                  provides+,superglobals+)>-->
+<!ATTLIST module active CDATA #REQUIRED name CDATA #REQUIRED
+                 type CDATA #REQUIRED version CDATA #REQUIRED>
+
+<!-- at least the core module need to be listed -->
+<!ELEMENT dependencies (dependency*)>
+<!ATTLIST dependencies blacklist CDATA #IMPLIED>
+<!ELEMENT dependency EMPTY>
+<!ATTLIST dependency active CDATA #REQUIRED module CDATA #REQUIRED
+                     version CDATA #REQUIRED>
+
+<!-- config section to load constants or other stuff -->
+<!ELEMENT config (groups*)>
+<!ELEMENT groups (group+)>
+<!ELEMENT group (element+)>
+<!ATTLIST group name CDATA #REQUIRED type CDATA #REQUIRED 
+                prefix CDATA #IMPLIED default CDATA #IMPLIED>
+<!ELEMENT element EMPTY>
+<!ATTLIST element name CDATA #REQUIRED active CDATA #IMPLIED 
+                  key CDATA #REQUIRED value CDATA #REQUIRED>
+
+<!ELEMENT includes (include+)>
+<!ATTLIST includes provides CDATA #REQUIRED>
+<!ELEMENT include (#PCDATA)>
+<!ATTLIST include active CDATA #REQUIRED order CDATA #REQUIRED 
+                  type CDATA #REQUIRED>
+
+<!--
+<!ELEMENT provides (#PCDATA)>
+<!ELEMENT rights (#PCDATA)>
+<!ELEMENT masks EMPTY>
+<!ELEMENT actions EMPTY>
+<!ELEMENT superglobals EMPTY>
+-->

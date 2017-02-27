@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <!-- site -->
+  <group name="site" type="const" prefix="SITE_">
+    <element name="stitle"	key="TITLE"	value="heili mobile - web application build engine" />
+  </group>
+
+</root>

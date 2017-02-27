@@ -1,0 +1,22 @@
+<!ELEMENT root (form*)>
+<!ELEMENT form (element*)>
+<!ATTLIST form module CDATA #REQUIRED name CDATA #REQUIRED
+               type CDATA #REQUIRED method CDATA #REQUIRED
+               action CDATA #REQUIRED roles CDATA #REQUIRED
+               mode CDATA #REQUIRED>
+
+<!ELEMENT element EMPTY>
+<!ATTLIST element name CDATA #REQUIRED type CDATA #REQUIRED
+                  required CDATA #REQUIRED 
+                  show CDATA #IMPLIED disabled CDATA #IMPLIED
+                  title CDATA #IMPLIED group CDATA #IMPLIED 
+                  regex CDATA #IMPLIED text CDATA #IMPLIED
+                  source CDATA #IMPLIED btype CDATA #IMPLIED
+                  size CDATA #IMPLIED length CDATA #IMPLIED
+                  value CDATA #IMPLIED multiple CDATA #IMPLIED
+                  cols CDATA #IMPLIED rows CDATA #IMPLIED
+                  min CDATA #IMPLIED max CDATA #IMPLIED
+                  tclasses CDATA #IMPLIED iclasses CDATA #IMPLIED
+                  defines CDATA #IMPLIED filters CDATA #IMPLIED
+                  roles CDATA #IMPLIED>
+

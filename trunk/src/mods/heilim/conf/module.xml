@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <module active="y" name="heilim" type="template" version="0.1.0">
+    <dependencies>
+      <dependency active="y" module="core" version=">=0.1.0" />
+    </dependencies>
+    <config />
+    <!--
+    <rights />
+    <masks />
+    <actions />
+    <includes />
+    <superglobals />
+    -->
+  </module>
+
+</root>

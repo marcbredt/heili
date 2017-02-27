@@ -6,6 +6,7 @@ use \Exception as Exception;
 /**
  * Class used to throw an exception in case a delimiter for shared memory 
  * segment entries is not available.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class DelimiterNotFoundException extends Exception {

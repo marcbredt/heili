@@ -1,0 +1,17 @@
+<!ELEMENT root (sections+,subsections+,rules+) >
+<!ATTLIST root module CDATA #REQUIRED name CDATA #REQUIRED 
+               type CDATA #REQUIRED>
+<!ELEMENT sections (section*) >
+<!ATTLIST sections amount CDATA #REQUIRED >
+<!ELEMENT section EMPTY >
+<!ATTLIST section id CDATA #REQUIRED name CDATA #REQUIRED abbr CDATA #REQUIRED
+                  days CDATA #REQUIRED>
+<!ELEMENT subsections (subsection*) >
+<!ATTLIST subsections amount CDATA #REQUIRED >
+<!ELEMENT subsection EMPTY >
+<!ATTLIST subsection id CDATA #REQUIRED name CDATA #REQUIRED abbr CDATA #REQUIRED>
+<!ELEMENT rules (rule*) >
+<!ATTLIST rules cycle CDATA #REQUIRED >
+<!ELEMENT rule EMPTY >
+<!ATTLIST rule id CDATA #REQUIRED days CDATA #REQUIRED range CDATA #REQUIRED
+               years CDATA #REQUIRED>

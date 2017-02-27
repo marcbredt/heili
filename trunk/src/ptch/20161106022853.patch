@@ -1,0 +1,578 @@
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/conf/dtd/db/databases.dtd ../../deploy/conf/dtd/db/databases.dtd
+--- ../../source/conf/dtd/db/databases.dtd	2016-09-28 02:26:49.363417894 +0200
++++ ../../deploy/conf/dtd/db/databases.dtd	2016-11-05 22:53:56.743172397 +0100
+@@ -1,10 +1,11 @@
+ <!ELEMENT root (databases+)>
+ <!ELEMENT databases (database+)>
+ <!ATTLIST databases default CDATA #REQUIRED>
+-<!ELEMENT database (type+,host+,port+,user+,pass+,db+,
+-                    ssl*,persistent*,charset*,timeout*)>
+-<!ATTLIST database name CDATA #REQUIRED>
++<!ELEMENT database (type+,driver+,host+,port+,user+,pass+,db+,ssl*,persistent*,
++                    charset*,timeout*)>
++<!ATTLIST database active CDATA #REQUIRED name CDATA #REQUIRED>
+ <!ELEMENT type (#PCDATA)>
++<!ELEMENT driver (#PCDATA)>
+ <!ELEMENT host (#PCDATA)>
+ <!ELEMENT port (#PCDATA)>
+ <!ELEMENT user (#PCDATA)>
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/conf/module.xml ../../deploy/conf/module.xml
+--- ../../source/conf/module.xml	2016-11-05 07:23:54.985133285 +0100
++++ ../../deploy/conf/module.xml	2016-11-06 00:47:08.964853206 +0100
+@@ -51,6 +51,7 @@
+         <!-- logging -->
+         <group name="logging" type="const" prefix="LOG_">
+           <element name="loglevel"	key="LEVEL"	value="DEBUG" /> 
++          <element name="loglevel"	key="COLOR"	value="1" /> 
+         </group>
+ 
+         <!-- session -->
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/config/databaseconfig.class.php ../../deploy/core/db/config/databaseconfig.class.php
+--- ../../source/core/db/config/databaseconfig.class.php	2016-11-05 06:58:54.697693761 +0100
++++ ../../deploy/core/db/config/databaseconfig.class.php	2016-11-05 23:19:53.446891674 +0100
+@@ -1,83 +1,110 @@
+ <?php
+ 
+ namespace core\db\config;
++use core\util\xml\XMLDocument as XMLDocument;
++use core\util\map\StringMap as StringMap;
+ 
++/**
++ * Stores configurtion for a database loaded from conf/db/databases.xml in
++ * a string map to make it accessible to any underlying database backend 
++ * layer which needs it.
++ * @author Marc Bredt
++ * @see core\db\connect\Connector
++ * @see core\db\driver\DatabaseDriver
++ * @see core\db\driver\PDODriver
++ * @see core\db\vendor\mysql\MySQLPDODriver
++ */
+ class DatabaseConfig {
+ 
+-  private $name       = null; 
+-  private $type       = null;
+-  private $driver     = null;
+-  private $host       = null;
+-  private $port       = null;
+-  private $user       = null;
+-  private $pass       = null;
+-  private $db         = null;
+-  private $ssl        = null;
+-  private $persistent = null;
+-  private $charset    = null;
+-  private $timeout    = null;
+-
++  /**
++   * Stores the database config in a StringMap.
++   * @see core\util\map\StringMap
++   */
++  private $dbc = null;
++
++  /**
++   * Setup the database config.
++   * @param $x XMLDocument to load the database config from
++   */
+   public function __construct(XMLDocument $x = null) {
+-    $this->name       = $x->xpath("normalize-space(string(//database/@name))"); 
+-    $this->type       = $x->xpath("normalize-space(string(//database/type))"); 
+-    $this->driver     = $x->xpath("normalize-space(string(//database/driver))"); 
+-    $this->host       = $x->xpath("normalize-space(string(//database/host))"); 
+-    $this->port       = $x->xpath("normalize-space(string(//database/port))"); 
+-    $this->user       = $x->xpath("normalize-space(string(//database/user))"); 
+-    $this->pass       = $x->xpath("normalize-space(string(//database/pass))"); 
+-    $this->db         = $x->xpath("normalize-space(string(//database/db))"); 
+-    $this->ssl        = $x->xpath("normalize-space(string(//database/ssl))"); 
+-    $this->persistent = $x->xpath("normalize-space(string(//database/persistent))");
+-    $this->charset    = $x->xpath("normalize-space(string(//database/charset))"); 
+-    $this->timeout    = $x->xpath("normalize-space(string(//database/timeout))"); 
++    
++    // initialize the string map
++    $this->dbc = new StringMap();
++    
++    // set the values
++    $this->dbc->set("name",
++                    $x->xpath("normalize-space(string(//database/@name))")); 
++    $this->dbc->set("type",
++                    $x->xpath("normalize-space(string(//database/type))")); 
++    $this->dbc->set("driver",
++                    $x->xpath("normalize-space(string(//database/driver))")); 
++    $this->dbc->set("host",
++                    $x->xpath("normalize-space(string(//database/host))")); 
++    $this->dbc->set("port",
++                    $x->xpath("normalize-space(string(//database/port))")); 
++    $this->dbc->set("user",
++                    $x->xpath("normalize-space(string(//database/user))")); 
++    $this->dbc->set("pass",
++                    $x->xpath("normalize-space(string(//database/pass))")); 
++    $this->dbc->set("db",
++                    $x->xpath("normalize-space(string(//database/db))")); 
++    $this->dbc->set("ssl",
++                    $x->xpath("normalize-space(string(//database/ssl))")); 
++    $this->dbc->set("persistent",
++                    $x->xpath("normalize-space(string(//database/persistent))"));
++    $this->dbc->set("charset",
++                    $x->xpath("normalize-space(string(//database/charset))")); 
++    $this->dbc->set("timeout",
++                    $x->xpath("normalize-space(string(//database/timeout))")); 
++
+   }
+ 
+   public function get_name(){
+-    return $this->name;
++    return $this->dbc->get("name");
+   }
+ 
+   public function get_type(){
+-    return $this->type;
++    return $this->dbc->get("type");
+   }
+ 
+   public function get_driver(){
+-    return $this->driver;
++    return $this->dbc->get("driver");
+   }
+ 
+   public function get_host(){
+-    return $this->host;
++    return $this->dbc->get("host");
+   }
+ 
+   public function get_port(){
+-    return $this->port;
++    return $this->dbc->get("port");
+   }
+ 
+   public function get_user(){
+-    return $this->user;
++    return $this->dbc->get("user");
+   }
+ 
+   public function get_pass(){
+-    return $this->pass;
++    return $this->dbc->get("pass");
+   }
+ 
+   public function get_db(){
+-    return $this->db;
++    return $this->dbc->get("db");
+   }
+ 
+   public function get_ssl(){
+-    return $this->ssl;
++    return $this->dbc->get("ssl");
+   }
+ 
+   public function get_persistent(){
+-    return $this->persistent;
++    return $this->dbc->get("persistent");
+   }
+ 
+   public function get_charset(){
+-    return $this->charset;
++    return $this->dbc->get("charset");
+   }
+ 
+   public function get_timeout(){
+-    return $this->timeout;
++    return $this->dbc->get("timeout");
+   }
+ 
+ }
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/connect/connectable.interface.php ../../deploy/core/db/connect/connectable.interface.php
+--- ../../source/core/db/connect/connectable.interface.php	2016-11-05 06:58:54.697693761 +0100
++++ ../../deploy/core/db/connect/connectable.interface.php	2016-11-06 01:42:54.457442608 +0100
+@@ -5,8 +5,8 @@
+ interface Connectable {
+ 
+   /* connective functions */
+-  public function open();
+-  public function close();
++  //public function open();
++  //public function close();
+   public function connect();
+   public function disconnect();
+ 
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/connect/connector.class.php ../../deploy/core/db/connect/connector.class.php
+--- ../../source/core/db/connect/connector.class.php	2016-11-05 06:58:54.701693781 +0100
++++ ../../deploy/core/db/connect/connector.class.php	2016-11-06 02:27:15.158636313 +0100
+@@ -3,9 +3,10 @@
+ namespace core\db\connect;
+ use \PDO as PDO;
+ use core\util\param\Validator as Validator;
+-use core\util\map\IntegerMap as IntegerMap;
++use core\util\map\StringMap as StringMap;
+ use core\util\xml\XMLDocument as XMLDocument;
+ use core\db\connect\Connectable as Connectable;
++use core\db\config\DatabaseConfig as DatabaseConfig;
+ 
+ /**
+  * An abstract connector class to provide connections to a database.
+@@ -24,6 +25,11 @@
+   private $setup = null;
+ 
+   /**
++   * Stores connection options which can be derived from the DatabaseConfig.
++   */
++  private $conoptions = null;
++
++  /**
+    * Stores the current connection to the database.
+    */
+   private $connection = null;
+@@ -69,7 +75,7 @@
+                             $this->setup->get("type"),$this->setup->get("host"),
+                             $this->setup->get("port"),$this->setup->get("db"),
+                             $this->setup->get("user"),$this->setup->get("pass"),
+-                            $this->pdooptions);
++                            $this->conoptions);
+ 
+     // set the connections database handle
+     $this->connection->get();
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/connect/selector.class.php ../../deploy/core/db/connect/selector.class.php
+--- ../../source/core/db/connect/selector.class.php	2016-11-05 06:58:54.705693801 +0100
++++ ../../deploy/core/db/connect/selector.class.php	2016-11-06 00:21:48.629314269 +0100
+@@ -1,6 +1,7 @@
+ <?php
+ 
+ namespace core\db\connect;
++use core\util\param\Validator as Validator;
+ use core\util\xml\XMLDocument as XMLDocument;
+ use core\db\config\DatabaseConfig as DatabaseConfig;
+ 
+@@ -21,17 +22,21 @@
+    */
+   public function __construct($db = "") {
+ 
++    global $filelogger;
++
+     // configurations
+     $xdriver = new XMLDocument(PATH_CONF."/db/drivers.xml",PATH_DTD."/db/drivers.dtd");
+     $xdbases = new XMLDocument(PATH_CONF."/db/databases.xml",PATH_DTD."/db/databases.dtd");
+ 
+     // setup the database driver
+-    $defaultdb = $x->xpath("normalize-space(string(//databases/@default))",true);
++    $defaultdb = $xdbases->xpath("normalize-space(string(//databases/@default))");
+     $database = (!Validator::isempty($db) ? $db : $defaultdb);
+-    $xdbc = $x->xpath("//database[@active=\"y\" and @name=\"".$database."\"]",true);
++    $xdbc = $xdbases->xpath("//database[@active=\"y\" and @name=\"".$database."\"]",true);
+     $dbconf = new DatabaseConfig($xdbc);
+     $dclass = $xdriver->xpath("normalize-space(string(//driver[@name=\"".
+                               $dbconf->get_driver()."\"]/@class))");
++    $filelogger->debug("db=%, defaultdb=%, database=%, dclass=%, xdbc=%, dbc=%",
++                       array($db,$defaultdb,$database,$dclass,$xdbc,$dbconf));
+     $this->driver = new $dclass($dbconf);
+ 
+   }
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/driver/databasedriver.class.php ../../deploy/core/db/driver/databasedriver.class.php
+--- ../../source/core/db/driver/databasedriver.class.php	2016-11-05 06:58:54.709693821 +0100
++++ ../../deploy/core/db/driver/databasedriver.class.php	2016-11-06 01:46:14.182432991 +0100
+@@ -4,6 +4,7 @@
+ use core\db\connect\Connector as Connector;
+ use core\db\driver\Drivable as Drivable;
+ use core\object\Executable as Executable;
++use core\db\config\DatabaseConfig as DatabaseConfig;
+ use core\db\statement\Statement as Statement;
+ use core\db\statement\StatementBatch as StatementBatch;
+ 
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/driver/pdodriver.class.php ../../deploy/core/db/driver/pdodriver.class.php
+--- ../../source/core/db/driver/pdodriver.class.php	2016-11-05 06:58:54.717693860 +0100
++++ ../../deploy/core/db/driver/pdodriver.class.php	2016-11-06 02:24:47.705905134 +0100
+@@ -1,17 +1,35 @@
+ <?php
+ 
+ namespace core\db\driver;
++use \PDO as PDO;
+ use core\db\driver\DatabaseDriver as DatabaseDriver;
++use core\db\config\DatabaseConfig as DatabaseConfig;
+ use core\util\map\IntegerMap as IntegerMap;
+ 
+-class PDODriver extends DatabaseDriver {
++/**
++ * This class provides implementations for methods which are realizable via
++ * PDO functions. This driver class describes the second abstraction level
++ * for database drivers using the underlying PDO driver. Therefor the driver
++ * extending this class only need to implement the (abstract) functions
++ * inherited from the interface core\object\Executable and 
++ * core\db\driver\DatabaseDriver respectively as all other precedures can be
++ * predefined using the PDO methods as there usage is independent from the 
++ * execution itself.
++ * @author Marc Bredt
++ * @see core\object\Executable
++ * @see core\db\driver\DatabaseDriver
++ */
++abstract class PDODriver extends DatabaseDriver {
+ 
+   /** 
+    * (Prepared) Statement to run it multiple times without prepaing it again.
+    */
+   private $statement = null;
+ 
+-  private $opts = null;
++  /**
++   * Stores PDO options which can be derived from the DatabaseConfig.
++   */
++  private $pdooptions = null;
+ 
+   /**
+    * Setup the PDODriver. Especially PDO attributes.
+@@ -20,8 +38,8 @@
+    */
+   public function __construct(DatabaseConfig $dbc = null) {
+     parent::__construct($dbc);
+-    $this->opts = new IntegerMap();
+-    $this->opts->set(PDO::ATTR_CURSOR,PDO::CURSOR_FWDONLY);
++    //$this->pdooptions = new IntegerMap();
++    //$this->pdooptions->set(PDO::ATTR_CURSOR,PDO::CURSOR_FWDONLY);
+   }
+ 
+   public function prepare($sql = null, $opt = null) {
+@@ -89,6 +107,8 @@
+     return "";
+   }
+ 
++  
++
+ }
+ 
+ ?>
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/execute/executor.class.php ../../deploy/core/db/execute/executor.class.php
+--- ../../source/core/db/execute/executor.class.php	2016-11-05 06:58:54.721693880 +0100
++++ ../../deploy/core/db/execute/executor.class.php	2016-11-06 02:09:35.545381974 +0100
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-namespace core\db\exec;
++namespace core\db\execute;
+ use core\util\param\Validator as Validator; 
+ use core\util\string\StringUtil as StringUtil;
+ use core\db\driver\DatabaseDriver as DatabaseDriver;
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/statement/statementbatch.class.php ../../deploy/core/db/statement/statementbatch.class.php
+--- ../../source/core/db/statement/statementbatch.class.php	2016-11-05 06:58:54.721693880 +0100
++++ ../../deploy/core/db/statement/statementbatch.class.php	2016-11-06 02:14:14.570765586 +0100
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-namespace core\db\stmt;
++namespace core\db\statement;
+ use core\util\param\Validator as Validator;
+ use core\util\string\StringUtil as StringUtil;
+ 
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/statement/statement.class.php ../../deploy/core/db/statement/statement.class.php
+--- ../../source/core/db/statement/statement.class.php	2016-11-05 06:58:54.729693920 +0100
++++ ../../deploy/core/db/statement/statement.class.php	2016-11-06 02:13:59.546691086 +0100
+@@ -1,6 +1,6 @@
+ <?php
+ 
+-namespace core\db\stmt;
++namespace core\db\statement;
+ use core\util\param\Validator as Validator;
+ use core\util\string\StringUtil as StringUtil;
+ 
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/db/vendor/mysql/mysqlpdodriver.class.php ../../deploy/core/db/vendor/mysql/mysqlpdodriver.class.php
+--- ../../source/core/db/vendor/mysql/mysqlpdodriver.class.php	2016-11-05 07:06:23.299918259 +0100
++++ ../../deploy/core/db/vendor/mysql/mysqlpdodriver.class.php	2016-11-06 02:26:55.982541223 +0100
+@@ -1,7 +1,9 @@
+ <?php
+ 
+ namespace core\db\vendor\mysql;
++use core\util\param\Validator as Validator;
+ use core\db\driver\PDODriver as PDODriver;
++use core\db\config\DatabaseConfig as DatabaseConfig;
+ use core\db\statement\Statement as Statement;
+ use core\db\statement\StatementBatch as StatementBatch;
+ use core\exception\db\DatabaseException as DatabaseException;
+@@ -13,6 +15,11 @@
+ class MySQLPDODriver extends PDODriver {
+ 
+   private $dbc = null;
++
++  /**
++   * Stores mysql pdo options which can be derived from the DatabaseConfig.
++   */
++  private $mysqlpdooptions = null;
+  
+   /**
+    * Setup the MySQLPDODriver. 
+@@ -118,7 +125,7 @@
+     $results = array();
+ 
+     // start a transaction
+-    if($transact === true) $this->driver->begin();
++    if($transact === true) $this->begin();
+ 
+     try {
+ 
+@@ -165,13 +172,13 @@
+ 
+     // catch any exceptions and rollback if batch is run as transaction 
+     } catch(Exception $e) {
+-      if($this->driver->in()) $driver->rollback();
++      if($this->in()) $this->rollback();
+       throw($e); // pass the exception on to the ExceptionHandler 
+ 
+     }
+ 
+     // finally commit a transaction if batch was run as
+-    if($this->driver->in()) $this->driver->commit();
++    if($this->in()) $this->commit();
+ 
+     return $results; 
+ 
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/core/util/log/filelogger.class.php ../../deploy/core/util/log/filelogger.class.php
+--- ../../source/core/util/log/filelogger.class.php	2016-10-12 04:51:14.434714313 +0200
++++ ../../deploy/core/util/log/filelogger.class.php	2016-11-06 01:30:27.313737722 +0100
+@@ -33,9 +33,34 @@
+    * Log level order.
+    */
+   private $order = array(
+-                         "EMERG",  "CRIT",  "ALERT","ERR",
+-                         "WARNING","NOTICE","INFO", "DEBUG"
++                         "EMERG", "CRIT",    "ALERT",
++                         "ERR",   "WARNING", "NOTICE",
++                         "INFO",  "DEBUG"
+                         );
++
++  /**
++   * Terminal color codes wich can will be appended to the corresponding log
++   * log command if $colored is set to true. Theese codes will be interpreted
++   * running e.g. 
++   * <code>
++   *   $ less -r +F colored.log
++   *   $ tail -f colored.log
++   * </code>.
++   * The last entry is always used to restore the default color. All other
++   * entry indexes in $order refer to the same index in $color.
++   */
++  private $colors = array(
++                          "[1;5;7;31m", "[1;7;31m", "[1;2;31m",
++                          "[1;31m",     "[1;2;33m", "[1;36m",
++                          "[1;2;32m",   "[1;30m",
++                          "[0m"
++                         );
++
++  /**
++   * Flag to enable raw terminal color codes.
++   */
++  private $color = false;
++
+   /**
+    * Log level. Restrict/increase output in productive/test environments.
+    */
+@@ -269,16 +294,17 @@
+        || !Validator::in($type,$this->order)) $type = $this->level;
+ 
+     // append "type" marker to the log message
++    $cix = array_search($type,$this->order);
+     switch($type) {
+-      case "DEBUG": 	$ms .= " [ debug ] "; 		break;
+-      case "INFO": 	$ms .= " [ info ] "; 		break;
+-      case "NOTICE": 	$ms .= " [ notice ] "; 		break;
+-      case "WARNING":	$ms .= " [ warning ] "; 	break;
+-      case "ERR": 	$ms .= " [ error ] "; 		break;
+-      case "CRIT": 	$ms .= " [ critical ] "; 	break;
+-      case "ALERT": 	$ms .= " [ alert ] "; 		break;
+-      case "EMERG": 	$ms .= " [ emergency ] "; 	break;
+-      default: 		$ms .= " [ info ] "; 		break;
++      case "DEBUG":   $ms .= $this->get_colored(" [ debug ] ",$cix);     break;
++      case "INFO":    $ms .= $this->get_colored(" [ info ] ",$cix);      break;
++      case "NOTICE":  $ms .= $this->get_colored(" [ notice ] ",$cix);    break;
++      case "WARNING": $ms .= $this->get_colored(" [ warning ] ",$cix);   break;
++      case "ERR":     $ms .= $this->get_colored(" [ error ] ",$cix);     break;
++      case "CRIT":    $ms .= $this->get_colored(" [ critical ] ",$cix);  break;
++      case "ALERT":   $ms .= $this->get_colored(" [ alert ] ",$cix);     break;
++      case "EMERG":   $ms .= $this->get_colored(" [ emergency ] ",$cix); break;
++      default: 	      $ms .= $this->get_colored(" [ info ]",$cix);       break;
+     }
+ 
+     // get order indexes for "type" and the current "log level" set   
+@@ -291,6 +317,19 @@
+   }
+ 
+   /**
++   * Append $color sequences if $colored is set to true.
++   * @param $string string to color
++   * @param $cix color index in $colors
++   * @return color encoded terminal string
++   */
++  private function get_colored($string = " [ info ] ", $cix = 6) {
++    return (Validator::equals($this->color,true) && Validator::isa($cix,"integer")
++            ? hex2bin("1b").$this->colors[$cix].$string.
++              hex2bin("1b").$this->colors[count($this->colors)-1]
++            : $string);
++  }
++
++  /**
+    * Set the default log level. Defaults to "INFO".
+    * @param $level log level going to be set
+    */
+@@ -302,6 +341,14 @@
+       $this->level = "INFO";
+   }
+ 
++  /**
++   * Decides wether to use raw color codes when writing log messages.
++   * @param $color call with true when coloring should be enabled.
++   */
++  public function set_color($color = false) {
++    $this->color = (Validator::isa($color,"boolean") ? $color : false);
++  }
++
+   public function emerg($message = "", $replaces = array()) {
+     $cinfo = $this->get_caller_info(debug_backtrace());
+     $this->log($cinfo.$message, $replaces, "EMERG");
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/incs/adjust.include.php ../../deploy/incs/adjust.include.php
+--- ../../source/incs/adjust.include.php	2016-09-28 02:26:50.819425114 +0200
++++ ../../deploy/incs/adjust.include.php	2016-11-06 00:47:42.893021447 +0100
+@@ -4,5 +4,6 @@
+ 
+   // filelogger
+   $filelogger->set_level(LOG_LEVEL);
++  $filelogger->set_color(LOG_COLOR);
+ 
+ ?>
+diff -x '*\.patch' -x '\.*\.swp' -x '*\.sql' -x '*\.log' -x 'deploy\.sh' -x 'patch\.sh' -x 'modularize\.sh' -x 'clean\.sh' -x 'document\.sh' -x 'test\.sh' -x verifyclasschecks.sh -x 'namespace\.sh' -x xmlstarletformat.sh -x taillog.sh -x README -x NOTES -x LICENSE -x '*phpunit*' -x '*test*' -Naur ../../source/main/examples/db/select.php ../../deploy/main/examples/db/select.php
+--- ../../source/main/examples/db/select.php	2016-11-05 22:45:23.892629309 +0100
++++ ../../deploy/main/examples/db/select.php	2016-11-06 02:19:45.112404654 +0100
+@@ -1,21 +1,36 @@
+ <?php
+ 
+-  namespace app;
++  namespace examples\db;
+   use core\autoloader\AutoLoader as AutoLoader;
++  use core\util\log\FileLogger as FileLogger;
+   use core\db\data\DataGetter as DataGetter;
+   use core\db\connect\Selector as Selector;
+ 
+   // autoloader
+   require_once("../../../core/autoloader/autoloader.class.php");
+   require_once("../../../core/autoloader/devisor.class.php");
+-  $autoloader = new \AutoLoader(false, "../../..");
++  $autoloader = new AutoLoader(false, "../../..");
+   $autoloader->expand(".class.php,.interface.php,.include.php,.php");
+   $autoloader->load();
+ 
+-  $sel = new Selector("heili_test");
+-  $dag = new DataGetter("table3");
++  // some constants to let this example work properly
++  define("PATH_CONF","../../../conf");
++  define("PATH_DTD","../../../conf/dtd");
+ 
+-  print_r($dag->get());
+-  print_r($dag->get(array(":email"=>"admin@localhost")));
++  // filelogger
++  $filelogger = new FileLogger("select.php","./select.log");
++  $filelogger->set_level("DEBUG");
++  $filelogger->set_color(true);
++
++  // $database is the global variable DataGetter accesses
++  //global $database; 
++
++  $database = new Selector();
++  $d1 = new DataGetter("table3");
++  print_r($d1->get());
++
++  $database = new Selector("heili_test");
++  $d2 = new DataGetter("table4");
++  print_r($d2->get(array(":email"=>"admin@localhost")));
+ 
+ ?>

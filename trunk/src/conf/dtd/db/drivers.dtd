@@ -1,0 +1,4 @@
+<!ELEMENT root (drivers+)>
+<!ELEMENT drivers (driver+)>
+<!ELEMENT driver EMPTY>
+<!ATTLIST driver name CDATA #REQUIRED class CDATA #REQUIRED>

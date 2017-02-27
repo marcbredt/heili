@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <!-- target = containertype:containerattr:containername -->
+  <!-- index  = position in target -->
+  <!-- module/mask/template = template mask to load -->
+  <!-- module=="core" defaults to PATH_MASK -->
+  <!-- order of active masks matters as each mask loaded probably provides 
+       additional addressable nodes -->
+  <map>
+
+    <!-- errors -->
+    <!-- remember that global errors will be inserted to a hardcoded target with
+         "gerror" in class Template -->
+    <!-- those error fields will be set through the ExceptionHandler -->
+    <mask active="y" name="c_gerror" module="core" target="//td[@id=&quot;gerror&quot;]" 
+          ttype="node" index="0" mask="exception" template="global" type="php" />
+    <mask active="y" name="c_lerror" module="core" target="//div[@id=&quot;lerror&quot;]" 
+          ttype="node" index="1" mask="exception" template="local" type="php" />  
+
+
+    <!-- title -->
+    <mask active="y" name="c_title" module="core" target="/html/head/title" 
+          ttype="node" index="0" mask="title" template="head" type="php" />  
+    <mask active="y" name="c_title" module="core" target="/div[@id=&quot;header&quot;]" 
+          ttype="node" index="0" mask="title" template="head" type="php" />  
+
+    <!-- auth -->
+    <mask active="y" name="c_auth_main" module="core" 
+          target="//div[@id=&quot;header&quot;]" ttype="node" index="0" mask="auth" 
+          template="main" type="php" />  
+    <mask active="y" name="c_auth_login" module="core" 
+          target="//td[@id=&quot;c_auth_login&quot;]" 
+          ttype="node" index="0" mask="auth" template="login-form" type="php" />  
+    <mask active="y" name="c_auth_logout" module="core" 
+          target="//td[@id=&quot;c_auth_logout&quot;]" 
+          ttype="node" index="0" mask="auth" template="logout" type="php" />  
+    <mask active="y" name="c_auth_dummy" module="core" 
+          target="//td[@id=&quot;c_auth_dummy&quot;]" 
+          ttype="node" index="0" mask="auth" template="logout" type="php" />  
+
+    <!-- additionals -->
+    <!--
+    <mask active="n" name="m_news_main" module="news" target="div:id:contents" 
+          ttype="node" index="0" mask="news" template="main" type="php" />  
+    <mask active="n" name="c_page" module="core" target="div:id:contents" 
+          ttype="node" index="1" mask="page" template="page" type="php" />  
+    -->
+
+  </map>
+
+</root>

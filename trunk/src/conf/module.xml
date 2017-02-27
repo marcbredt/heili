@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <module active="y" name="core" type="module" version="0.1.0">
+
+    <!-- dependencies, blacklist modules will not be loaded globally -->
+    <dependencies blacklist="lang-de,heilim,calendar,survey" />
+
+    <!-- core config -->
+    <config>
+
+      <groups>
+
+        <!-- init -->
+        <group name="init" type="ini">
+          <element name="errorlog"	key="error_log"	
+                   value="../../log/heili_error.log" /> 
+          <element name="strictmode"	key="session.use_strict_mode"	value="1" /> 
+          <element name="usecookies"	key="session.use_cookies"	value="0" /> 
+        </group>
+
+        <!-- project  -->
+        <group name="project" type="const" prefix="PROJECT_">
+          <element name="root"	 key="NAME"  value="heili" />
+          <element name="stitle" key="TITLE" value="heili - keep it simple" />
+        </group>
+ 
+
+        <!-- directories -->
+        <group name="directories" type="const" prefix="PATH_">
+          <element name="root"		key="ROOT"	value=".." />
+          <element name="include"	key="INCLUDE"	value="../incs" />
+          <element name="conf"		key="CONF"	value="../conf" />
+          <element name="mods"		key="MODULES"	value="../mods" />
+          <element name="css"		key="CSS"	value="css" />
+          <element name="dtd"		key="DTD"	value="../conf/dtd" />
+          <element name="lang"		key="TEMPLATES"	value="../conf/template" />
+          <element name="lang"		key="LANG"	value="../conf/lang" />
+          <element name="core"		key="CORE"	value="../core" />
+          <element name="cmask"		key="MASK"	value="../core/mask" />
+        </group>
+
+        <!-- pgp/gpg -->
+        <group name="pgp-gpg" type="const" prefix="GPG_">
+          <element name="tmpdir"  key="TMPDIR"	value="/tmp" /> 
+          <element name="verify"  key="VERIFY"	value="1" /> 
+          <element name="homedir" key="HOMEDIR"	value="/home/marc/.gnupg" /> 
+          <element name="keyring" key="KEYRING"	value="/home/marc/.gnupg/pubring.gpg" /> 
+        </group>
+
+        <!-- logging -->
+        <group name="logging" type="const" prefix="LOG_">
+          <element name="loglevel"	key="LEVEL"	value="DEBUG" /> 
+          <element name="loglevel"	key="COLOR"	value="1" /> 
+        </group>
+
+        <!-- session -->
+        <group name="session" type="const" prefix="SESSION_">
+          <element name="sname"	key="NAME"	value="core:pid" /> 
+        </group>
+
+        <!-- cookie -->
+        <group name="cookie" type="const" prefix="COOKIE_">
+          <element name="clifetime"	key="LIFETIME"	value="1200" /> 
+          <element name="cpath"	key="PATH"	value="/" /> 
+          <element name="cpath"	key="DOMAIN"	value="heili.kleinkiesow.lo" /> 
+        </group>
+
+        <!-- auth -->
+        <group name="cookie" type="const" prefix="AUTH_">
+          <element name="authmethod"	key="METHOD"	value="db" /> 
+        </group>
+         
+        <!-- templates -->
+        <group name="templates" type="const" prefix="TEMPLATE_">
+          <element name="tdefault"	key="DEFAULT"	value="heili" /> 
+        </group>
+
+        <!-- language conststants -->
+        <group name="language" type="const" prefix="LANG_">
+          <element name="langdefault"	key="DEFAULT"	value="en" /> 
+        </group>
+
+        <!-- available languages -->
+        <group name="languages" type="none" default="en">
+          <element active="y" name="en"	key="en" value="en" />
+        </group>
+
+      </groups>
+
+    </config>
+
+    <!-- include required files from "incs" directory -->
+    <!-- enter file pathes relatively to the incs directory, 
+           the path relatively to app root will be adjusted upon module loading -->
+    <includes provides="autoloader,modulemap,sessionhandler,session,exceptionhandler,user,tname,template">
+      <include active="y"  order="100000"  type="file">adjust.include.php</include>
+      <include active="n"  order="200000"  type="file">header.include.php</include>
+      <include active="y"  order="300000"  type="file">session.include.php</include>
+      <include active="y"  order="400000"  type="file">cookie.include.php</include>
+      <include active="y"  order="500000"  type="file">language.include.php</include>
+      <include active="n"  order="600000"  type="file">request.include.php</include>
+      <include active="n"  order="700000"  type="file">superglobals.include.php</include>
+      <include active="y"  order="800000"  type="file">user.include.php</include>
+      <include active="y"  order="900000"  type="file">action.include.php</include>
+      <include active="n" order="1000000"  type="file">response.include.php</include>
+      <include active="y" order="1100000"  type="file">database.include.php</include>
+      <include active="y" order="1200000"  type="file">template.include.php</include>
+    </includes>
+
+    <!--
+    <rights />
+    <masks />
+    <actions />
+    <superglobals />
+    -->
+
+  </module>
+
+</root>
+

@@ -1,8 +1,0 @@
-#!/bin/bash
-
-XMLLINT="/usr/bin/xmllint"
-SED="/bin/sed"
-
-phpunit_config="${1}"
-
-${XMLLINT} --xpath '//testsuite[@active="y"]/@name' ${phpunit_config} | ${SED} 's/ name="\|"$//g' | ${SED} 's/"/,/'

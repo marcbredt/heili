@@ -1,0 +1,8 @@
+<!ELEMENT root (superglobal+)>
+<!ELEMENT superglobal (key*)>
+<!ATTLIST superglobal name CDATA #REQUIRED source CDATA #REQUIRED 
+                      evaluate CDATA #IMPLIED>
+<!ELEMENT key EMPTY>
+<!ATTLIST key name CDATA #REQUIRED type CDATA #REQUIRED
+              value CDATA #IMPLIED>
+

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<root>
+  <!-- empty cdata -->
+  <![CDATA[
+  	   ]]>
+  <a type="a">
+    <!-- cdata begin -->
+    some <![CDATA[cdata]]> segment surrounded by text and comments
+    <!-- cdata end -->
+    &amp;
+    <b id="1"/>
+    <b id="1" a1="add"/>
+  </a>
+  <c name="n">ctext</c>
+  <e>etext</e>
+</root>

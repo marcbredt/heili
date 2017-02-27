@@ -1,6 +1,7 @@
 <?php
 
 namespace core\control;
+use core\util\param\Validator as Validator;
 
 /**
  * Simple timer class. If the timer is started on can call Timer::get()
@@ -53,13 +54,13 @@ class Timer {
                               $standalone = self::timer_default_standalone) {
 
     // set timeout
-    if(strncmp(gettype($timeout),"integer",7)==0)
+    if(Validator::isa($timeout,"integer",7))
       $this->timer_timeout = $timeout;
     else
       $this->timer_timeout = self::timer_default_timeout;
 
     // set standalone
-    if(strncmp(gettype($standalone),"boolean",7)==0)
+    if(Validator::isa($standalone,"boolean"))
       $this->timer_standalone = $standalone;
     else
       $this->timer_standalone = self::timer_default_standalone;

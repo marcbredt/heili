@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <language id="de">
+    <element active="y" name="hello">Willkommen</element>
+    <element active="y" name="error">Fehler</element>
+    <element active="y" name="sessionid">Sitzungs-Kennung</element>
+    <element active="y" name="trace">Ursache</element>
+    <element active="y" name="user">Benutzer</element>
+    <element active="y" name="pass">Passwort</element>
+    <element active="y" name="login">Einloggen</element>
+    <element active="y" name="logout">Ausloggen</element>
+    <element active="y" name="language">Sprache</element>
+    <element active="y" name="survey">Umfrage</element>
+    <element active="y" name="change">wechseln</element>
+    <element active="y" name="start">starten</element>
+    <element active="y" name="abort">abbrechen</element>
+    <element active="y" name="submit">absenden</element>
+    <element active="y" name="confirm">bestätigen</element>
+    <element active="y" name="page">Seite</element>
+    <element active="y" name="role">Rolle</element>
+    <element active="y" name="role_as">in der Rolle als</element>
+    <element active="y" name="logged_in_as">Sie sind angemeldet</element>
+    <element active="y" name="choose">Bitte w&amp;auml;hlen Sie</element>
+    <element active="y" name="your_f">ihre</element>
+    <element active="y" name="your_m">ihr</element>
+    <element active="y" name="no_more_roles">Es stehen keine weiteren Rollen zur Verf&amp;uuml;gung</element>
+  </language>
+</root>

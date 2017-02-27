@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <module active="y" name="langde" type="extension" version="0.1.0">
+    <dependencies>
+      <dependency active="y" module="core" version=">=0.1.0" />
+    </dependencies>
+    <config>
+      <groups>
+        <group name="languages">
+          <element active="y" name="de" key="de" value="de" />
+        </group>
+      </groups>
+    </config>
+    <!--
+    <includes>
+      <include type="file">language.include.php</include>
+    </includes>
+    <provides>language</provides>
+    <rights />
+    <masks />
+    <actions />
+    <superglobals />
+    -->
+  </module>
+</root>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<root module="calendar" name="gregorian" type="solar">
+
+  <!-- sections alias months -->
+  <sections amount="24">
+    <section id="1"  name="Januar"    abbr="Jan" days="31" />
+    <section id="2"  name="Februar"   abbr="Feb" days="28" />
+    <section id="3"  name="März"      abbr="Mär" days="31" />
+    <section id="4"  name="April"     abbr="Apr" days="30" />
+    <section id="5"  name="Mai"       abbr="Mai" days="31" />
+    <section id="6"  name="Juni"      abbr="Jun" days="30" />
+    <section id="7"  name="Juli"      abbr="Jul" days="31" />
+    <section id="8"  name="August"    abbr="Aug" days="31" />
+    <section id="9"  name="September" abbr="Sep" days="30" />
+    <section id="10" name="Oktober"   abbr="Okt" days="31" />
+    <section id="11" name="November"  abbr="Nov" days="30" />
+    <section id="12" name="Dezember"  abbr="Dez" days="31" />
+  </sections>
+
+  <!-- subsections alias weeks -->
+  <subsections amount="7">
+    <subsection id="0" name="Sonntag"    abbr="So" />
+    <subsection id="1" name="Montag"     abbr="Mo" />
+    <subsection id="2" name="Dienstag"   abbr="Di" />
+    <subsection id="3" name="Mittwoch"   abbr="Mi" />
+    <subsection id="4" name="Donnerstag" abbr="Do" />
+    <subsection id="5" name="Freitag"    abbr="Fr" />
+    <subsection id="6" name="Samstag"    abbr="Sa" />
+  </subsections>
+
+  <!-- intercalation rules for leap days -->
+  <rules cycle="">
+    <rule id="2" days="29" range="" years="%400,!%100,%4" />
+  </rules>
+
+</root>

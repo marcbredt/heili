@@ -2,8 +2,8 @@
 
 namespace core\shm;
 use core\util\string\StringUtil as StringUtil;
-use core\util\Writer as Writer;
-use core\object\LoggableObject as LoggableObject;
+use core\util\param\Validator as Validator;
+use core\util\io\Writer as Writer;
 use core\shm\SharedMemorySegment as SharedMemorySegment;
 use core\shm\SharedMemoryReader as SharedMemoryReader;
 use core\exception\shm\SegmentException as SegmentException;
@@ -14,7 +14,7 @@ use core\exception\shm\SegmentException as SegmentException;
  * to implement by any writer.
  * @author Marc Bredt
  */
-class SharedMemoryWriter extends LoggableObject implements Writer {
+class SharedMemoryWriter implements Writer {
 
   /** 
    * Element to write to. For this writer it should be a shared memory segment.
@@ -32,10 +32,12 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
    * @param $seg shared memory segment to write to.
    */
   public function __construct($seg = null) {
-    if(strncmp(gettype($seg),"object",6)==0
-       && strncmp(get_class($seg),"core\shm\SharedMemorySegment",26)==0) {
+    global $filelogger;
+    if(Validator::isa($seg,"object") 
+       && Validator::isclass($seg,"core\shm\SharedMemorySegment")) {
       $this->element = $seg;
-      $this->log(__METHOD__.": Creating writer for segment %.", array($this->element));
+      $filelogger->log("Creating writer for segment %.", 
+                       array($this->element));
     } else {
       $this->element = null;
     }
@@ -53,10 +55,11 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
    */
   public function write($values = array(), $key = -1) {
 
+    global $filelogger;
+
     $written_data = 0;
 
-    if(!is_null($this->element) 
-       && strncmp(gettype($values),"array",5)==0) {
+    if(!Validator::isa($this->element,"null") && Validator::isa($values,"array")) {
 
       // build string to put first
       $pstr = "";
@@ -67,15 +70,16 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
         if($k==(count($values)-1)) $pstr = $pstr.$l.serialize($v).$r.$d;
         else $pstr = $pstr.$l.$v.$r;
       }
-      $this->log(__METHOD__.": pstr=%, key=%", array($pstr, $key));
+      $filelogger->log("pstr=%, key=%", array($pstr, $key));
 
       // check it against the memory layout first 
       $has_layout = false;
       if(!StringUtil::has_layout($this->element->get_shm_seg_layout(),
                                  $pstr)) {
-        $this->log(__METHOD__.": %", array(new SegmentException(
+        $filelogger->log("%", 
+              array(new SegmentException(
                      "layout=".$this->element->get_shm_seg_layout().
-                     ", data=".$pstr, 2)));
+                     ", data=".$pstr, 2)),"ERR");
         throw(new SegmentException(
                 "layout=".$this->element->get_shm_seg_layout().
                 ", data=".$pstr, 2));
@@ -99,7 +103,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
       $this->telement = "";
 
       
-      $this->log(__METHOD__.": slen=%, len=%, type=%, cws=%", 
+      $filelogger->log("slen=%, len=%, type=%, cws=%", 
                  array($seglen, strlen($smr->read()), gettype($smr->read()),
                        preg_replace("/[\t ]+/", " ", preg_replace("/[\r\n]/", " ", 
                          var_export(count_chars($smr->read()),true)))));
@@ -116,7 +120,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
         // check the space left/needed before writing
 
         // fifo segment
-        if(strncmp($segtype, "fifo", 4)==0) {
+        if(Validator::equals($segtype,"fifo")) {
            
           // if the new fully entry does not fit into the segment we free some
           // space according to the segment strategy but only if the new entry
@@ -142,25 +146,25 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
           // otherwise there is something wrong with the space
           } else {
             $has_space = false;
-            $this->log(__METHOD__.": %", 
-                       array(new SegmentException("freeing failed",0)));
+            $filelogger->log("%", 
+                       array(new SegmentException("freeing failed",0)),"ERR");
             throw(new SegmentException("freeing failed",0));
 
           }
 
         // lifo segment
-        } else if(strncmp($segtype, "lifo", 4)==0) {
+        } else if(Validator::equals($segtype,"lifo")) {
             
         // stor segment
-        } else if(strncmp($segtype, "stor", 4)==0) {
+        } else if(Validator::equals($segtype,"stor")) {
 
           // simply check if there is still place left to push elements
           if($seglen+strlen($pstr)<=$this->element->get_shm_seg_size()) {
             $has_space = true;
           
           } else {
-            $this->log(__METHOD__.": %", 
-                       array(new SegmentException("no more space", 1)));
+            $filelogger->log("%", 
+                       array(new SegmentException("no more space", 1)),"ERR");
             throw(new SegmentException("no more space", 1));
 
           } 
@@ -168,7 +172,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
 
       // writing to a specific index is a bit more complex
       // get the offset for writing to an index
-      } else if(strncmp(gettype($key),"integer",7)==0 && $key > -1) {
+      } else if(Validator::isa($key,"integer") && $key > -1) {
 
         // if its a valid key
         if($key <= count($xseg)-1) {
@@ -183,7 +187,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
           // space left
 
           // fifo segment
-          if(strncmp($segtype, "fifo", 4)==0) {
+          if(Validator::equals($segtype,"fifo")) {
             
             // if the new segment data length is to big
             if($segnlen > $this->element->get_shm_seg_size()) {
@@ -202,7 +206,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
             $has_space = true;
 
           // lifo segment
-          } else if(strncmp($segtype, "lifo", 4)==0) {
+          } else if(Validator::equals($segtype,"lifo")) {
 
             // if the new segment data length is to big
             if($segnlen > $this->element->get_shm_seg_size()) {
@@ -222,7 +226,7 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
 
           // if the segment type is 'stor' simply try to store it or throw an
           // exception if the length do not fit 
-          } else if(strncmp($segtype, "stor", 4)==0) {
+          } else if(Validator::equals($segtype,"stor")) {
 
             // if the modified length is less or equal the segment size 
             // simply write it 
@@ -231,8 +235,8 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
 
             } else {
               $has_space = false;
-              $this->log(__METHOD__.": %", 
-                         array(new SegmentException("no more space", 1)));
+              $filelogger->log("%", 
+                         array(new SegmentException("no more space", 1)),"ERR");
               throw(new SegmentException("no more space", 1));
 
             } 
@@ -242,10 +246,11 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
         } 
           
       } else {
-        $this->log(__METHOD__.": %", array(new ParamNotValidException(
-                     __METHOD__.": key(int)=".var_export($key,true))));
+        $filelogger->log("%", 
+             array(new ParamNotValidException(
+                     "key(int)=".var_export($key,true))),"ERR");
         throw(new ParamNotValidException(
-                __METHOD__.": key(int)=".var_export($key,true))."\n");
+                "key(int)=".var_export($key,true))."\n");
 
       }
 
@@ -256,8 +261,8 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
         // TODO: WriterThread to allow multiple writes on different 
         //       but "correctly calced" locations/offsets     
 
-        $this->log(__METHOD__.": tel=%, tels=%, pstr=%, pstrs=%, els=%, ".
-                     "woff=%, woff+lpstr=%, segs-(woff+lpstr)=%",
+        $filelogger->log("tel=%, tels=%, pstr=%, ".
+                          "pstrs=%, els=%, woff=%, woff+lpstr=%, segs-(woff+lpstr)=%",
                    array($this->telement, strlen($this->telement),
                          $pstr, strlen($pstr), $this->element->get_shm_seg_size(),
                          $woffset, ($woffset+strlen($pstr)),
@@ -278,13 +283,13 @@ class SharedMemoryWriter extends LoggableObject implements Writer {
                                                -($woffset+strlen($pstr))," "), 
                                $woffset+strlen($pstr));
  
-        $this->log(__METHOD__.": wp=%, wd=%, wf=%", 
+        $filelogger->log("wp=%, wd=%, wf=%", 
                    array($written_prefix, $written_data, $written_flush));
 
         if($written_prefix===false || $written_data===false 
            || $written_flush===false){
-          $this->log(__METHOD__."%", 
-                     array(new SegmentException($this->element,4)));
+          $filelogger->log("%", 
+                     array(new SegmentException($this->element,4)),"ERR");
           throw(new SegmentException($this->element,4));
 
         }

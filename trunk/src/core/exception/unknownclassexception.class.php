@@ -1,9 +1,11 @@
 <?php
 
 namespace core\exception;
+use \Exception as Exception;
 
 /**
  * Exception to be thrown whenever a class could not be loaded.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class UnknownClassException extends Exception {
@@ -14,9 +16,9 @@ class UnknownClassException extends Exception {
    * @param $code default exception code
    * @param $previous exception thrown before
    */
-  public function __construct($message = "Class not found", $code = 0,
+  public function __construct($message = "", $code = 0,
                               Exception $previous = null) {
-    parent::__construct($message,$code,$previous);
+    parent::__construct("Class '".$message."' not found.",$code,$previous);
   }
 
   /**

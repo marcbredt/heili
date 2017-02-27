@@ -1,0 +1,6 @@
+<!ELEMENT root (superglobals+)>
+<!ELEMENT superglobals (superglobal+)>
+<!ELEMENT superglobal EMPTY>
+<!ATTLIST superglobal active CDATA #REQUIRED name CDATA #REQUIRED 
+                      policy CDATA #REQUIRED file CDATA #REQUIRED>
+

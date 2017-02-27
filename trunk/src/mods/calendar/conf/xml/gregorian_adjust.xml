@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<root module="calendar" name="gregorian" type="solar">
+
+  <!-- sections alias months -->
+  <sections amount="24">
+    <section id="1"  name="MyJanuar"    abbr="Myj" days="31" />
+  </sections>
+
+  <!-- subsections alias weeks -->
+  <subsections amount="7" />
+
+  <!-- intercalation rules for leap days -->
+  <rules cycle="" />
+
+</root>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <headers name="request-headers" policy="drop">
+
+    <key name="Accept"			type="regex" value="" />
+    <key name="Accept-Charset"		type="regex" value="" />
+    <key name="Accept-Encoding"		type="regex" value="" />
+    <key name="Accept-Language"		type="regex" value="" />
+    <key name="Authorization"		type="regex" value="" />
+    <key name="Expect"			type="regex" value="" />
+    <key name="From"			type="regex" value="" />
+    <key name="Host"			type="regex" value="" />
+    <key name="If-Match"		type="regex" value="" />
+    <key name="If-Modified-Since"	type="regex" value="" />
+    <key name="If-None-Match"		type="regex" value="" />
+    <key name="If-Range"		type="regex" value="" />
+    <key name="If-Unmodified-Since"	type="regex" value="" />
+    <key name="Max-Forwards"		type="regex" value="" />
+    <key name="Proxy-Authorization"	type="regex" value="" />
+    <key name="Range"			type="regex" value="" />
+    <key name="Referer"			type="regex" value="" />
+    <key name="TE"			type="regex" value="" />
+    <key name="User-Agent"		type="regex" value="" />
+
+    <key name="Connection"		type="regex" value="" />
+    <key name="Cache-Control"		type="regex" value="" />
+
+  </headers>
+
+</root>

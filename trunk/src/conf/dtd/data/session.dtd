@@ -1,0 +1,4 @@
+<!ELEMENT root (session+)>
+<!ELEMENT session (key*)>
+<!ELEMENT key EMPTY>
+<!ATTLIST key name CDATA #REQUIRED type CDATA #REQUIRED>

@@ -7,6 +7,7 @@ use \Exception as Exception;
  * This class is used to raise exceptions for invalid DOMXpath
  * expressions. 
  * @see XMLDocument
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class InvalidXPathExpressionException extends Exception {

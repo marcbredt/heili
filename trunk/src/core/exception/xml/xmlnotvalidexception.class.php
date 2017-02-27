@@ -1,12 +1,12 @@
 <?php
 
 namespace core\exception\xml;
-// the Exception class is located somewhere in the php base package
 use \Exception as Exception;
 
 /**
  * This class describes exceptions which can occur using
  * XMLDocument.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class XMLNotValidException extends Exception {

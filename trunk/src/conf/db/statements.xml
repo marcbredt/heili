@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <statements>
+
+
+    <!-- DATA TYPES -->
+    <statement name="datatypes">
+      select data_type, character_maximum_length from information_schema.columns where table_schema = :schema and table_name = :table and column_name = :column;
+    </statement>
+
+
+    <!-- AUTH/ROLE -->
+    <statement name="initrole">
+      select r.rid, r.name from roles as r join r_roles as rr on r.rid = rr.rid where cid = :cid order by rank desc limit 1;
+    </statement>
+
+    <statement name="rolename">
+      select l.text from roles as r join r_langtext as rl join langtext as l on r.name = :rname and r.rid = rl.rid and rl.ltid = l.ltid and l.lab = :lab;
+    </statement>
+
+    <statement name="selectrole">
+      select r.name, l.text from r_roles as rr join roles as r join r_langtext as rl join langtext as l on rr.cid = :cid and rr.rid = r.rid and r.name &lt;&gt; :rname and r.rid = rl.rid and rl.ltid = l.ltid and l.lab = :lab order by r.rank desc;
+    </statement>
+
+    <statement name="checkcred" uses="user.password,user.email">
+      select cid, firstname, lastname, email, md5(:pass)=password as valid from user where email = :email;
+    </statement>
+
+
+    <!-- LANGUAGE -->
+    <statement name="languages">
+      select lab, text from language;
+    </statement>
+
+
+    <!-- SURVEY -->
+    <statement name="surveys" uses="surveys.sid">
+      select s.sid, l.lab, l.text from surveys as s join r_langtext as rl join langtext as l on s.sid = rl.sid and rl.ltid = l.ltid and l.lab = :lab;
+    </statement>
+   
+    <statement name="survey_num_questions">
+      select count(*) as qnum from surveys as s join questions as q on s.sid = q.sid and s.sid = :sid;
+    </statement>
+
+    <statement name="survey_title_only">
+      select s.sid, l.text as stitle from surveys as s join r_langtext as rl join langtext as l on s.sid = :sid and s.sid = rl.sid and rl.ltid = l.ltid and l.lab = :lab;
+    </statement>
+    
+    <statement name="survey_questions_only" uses="questions.qid">
+      select s.sid, q.qid, l.lab, l.text from surveys as s join questions as q join r_langtext as rl join langtext as l on s.sid = q.sid and s.sid = :sid and q.qid = rl.qid and rl.ltid = l.ltid and l.lab = :lab;
+    </statement>
+
+    <statement name="survey_answers_only" uses="answers.aid,answers.paid">
+      select s.sid, q.qid, a.aid, a.paid, t.name as type, l.lab, l.text from surveys as s join questions as q join answers as a join atypes as t join r_langtext as rl join langtext as l on s.sid = q.sid and s.sid = :sid and q.qid = a.qid and a.qid = :qid and a.atype = t.atid and a.aid = rl.aid and rl.ltid = l.ltid and l.lab = :lab;
+    </statement>
+
+    <statement name="surveyaccomplished">
+      select cid, snid from accomplished where cid = :cid and snid = :snid;
+    </statement>
+
+    <!-- tree execution -->
+    <!--
+    <statement name="survey" provides="name,lab">
+      select s.name, l.lab, l.text as stitle from surveys as s join langtext as l on s.name = :sname and s.ltid = l.ltid and l.lab = :lab;
+      <statement name="survey_questions" provides="qid,lab">
+        select q.qid, l.lab, l.text from questions as q join langtext as l on q.snid = :name and q.ltid = l.ltid and l.lab = :lab;
+        <statement name="survey_questions_answers" provides="atype">
+          select distinct a.aid, a.paid, a.qid, l.text, l.ref, t.name from answers as a join langtext as l join atypes as t on a.qid = :qid and a.ltid = l.ltid and l.lab = :lab and a.atype = t.atid;
+        </statement>
+      </statement>
+    </statement>
+    -->
+
+
+    <!-- DUMMIES -->
+    <statement name="table1">
+      select atable.eins as 'atable.eins', atable.zwei as 'atable.zwei' from atable;
+    </statement> 
+
+    <statement name="table2">
+      select atable.eins as 'atable.eins', (select * from atable) as 'atable.zwei' from atable;
+    </statement> 
+   
+    <statement name="table3">
+      select * from h_core_user;
+    </statement> 
+
+    <statement name="table4">
+      select * from h_core_user where email = :email;
+    </statement> 
+
+  </statements>
+
+</root>

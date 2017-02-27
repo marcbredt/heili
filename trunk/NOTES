@@ -1,128 +1,73 @@
-Notes on this path
-------------------
-* merging path
+Mergables
+---------
+* conf/data/errors.xml
+* conf/data/actions.xml
+* conf/html/forms.xml
+  * conf/html/form/ = root form def directory
 
-Modules
+
+Hosting
 -------
-* language
-* calendar
-* ...
+xlhost.com - 
+pytal.com - no ssl
 
-Packages
---------
-* ant
-  * build script config
-* ant-contrib
-  * if then else in ant build configurations
-* php
-  * the php package needs to be built with sysvsem enabled
-* php-log
-  * core application contains a filelogger extending Log
-* phpunit
-  * php-codecoverage  # for code coverage
-  * php5-xdebug       # for code coverage/profiling
-    * OPTIONAL webgrind to read cachgrind files via webinterface
-  * php5-token-stream # for code coverage
-    * bootstrap the autoloader from this package 
-    * or better run the one provided by the application
-  * php5-mcrypt
-    * for testing purposes, creating random hashes
-  * OPTIONAL phpunit-selenium, phpunit-story 
-    * for loading phpunit's selenium classes
-    * avoids holy cow messages of own autoloader
-* doxygen
 
-Stuff on versions
------------------
-* php
-  * 5.6.1, $nowait, sem_acquire
-
-Documentation
--------------
-* doxygen src/config/doxygen/doxygen.conf
-* ant to-doc
-* ./build - choose to-doc
-
-Conventions
------------
-* classes must be named name.class.php
-  * every additional class need to extend AccessibleObject
-    to be able to check its (method) parameters first
-  * define no constructors for those classes 
-* test classes are named name.test.class.php
-* szenario tests can be created using phpunits testsuites
-* preamble for setting up include_path to be able to load classes using relative
-  pathes from root
-* placeholders in configuration or source files will be replaced 
-  during deploy/test runs or whenever needed
-  * e.g. @php-deploy-path@
-  * have a look at build.xml, especially the last targets
-* using namespaces (for external classes)
-  * http://stackoverflow.com/questions/32478962
-  * namespaced class files within other namespaces need to be called
-    with root namespace prefix
-    * \util\sth\Class replaces util\sth\Class if namespace is not
-      util\sth
-* test files
-  * class file [Cc]lass[Nn]ame.class.php
-  * corresponding testfile [Cc]lass[Nn]ame[Tt]est.test.class.php
-* logging
-  * extend LoggableObject to pin logging functionality onto objects
-    * avoids file handle and resource corruption upon (de)serialization
-  * use $this->logger to log messages
-
-Testing
--------
-* phpunit for unit and simple scenario tests
-* hinject for request scenarios/tests
-  * simple vhost creation
-
-Deploy
+WebRTC
 ------
-* ./build - choose all
-* if run as root directories and files will be chowned AND chmodded otherwise just chmodded
+* local lan ip exposure
+* media.peerconnection.*
 
-Modules
--------
-* writing modules
-  * registering - config 
-  * usage/integration - evaluation of input
+Data
+----
 
-Notes on core loadings
-----------------------
-* Session
-* Autoload - DONE
-  * namespace structure to load classes
-* Exception
-  * 
-* Configuration
-  * via shared memory management 
-    * as generated objects are not accessible anymore after script execution
-    * as script execution is followed by a garbage collector
-* Request
-* Protocol
+* json - db data responses
+* xml - config, datasets
+* cdn - icons
 
-Modifying CHANGELOG
--------------------
-$ export DEBFULLNAME="Marc Bredt"; export DEBEMAIL="marc.bredt@gmail.com"
-$ dch -c trunk/CHANGELOG --package heili --distribution stable --create -v 0.0.2
-$ dch -c trunk/CHANGELOG -r
-$ dch -c trunk/CHANGELOG -i
 
-Metrics
--------
-LOC: find -type f -not -path "./.git/*" -exec wc -l {} +
+Survey
+------
 
-Current tasks
--------------
-* shm access syncen (sem_*,shmop_*)
-  * SemaphoreHandler:acquire -> 0x4104822b, ipcs -> 0x4104822a
-* shm phpunit tests 
-  * handlers
-  * semaphores, managers
-* shm manager
-* shm examples
-  * semaphores
-  * manager
-* other (phpunit) tests
+* survey
+  * as static xml with lang extension via survey-LANG.xml or
+    * <survey id="sid" name="name">
+        <qs>
+          <q id="1">
+            <as type="check,radio,select">
+              <a>1</a>
+            </as>
+          </q>
+        </qs>
+      </survey>
+
+  * a dynamic version via db 
+    * D user        	-uid-    	        	(uid,name,mail,pass,...)
+    * D accomplished	-acid/uid/sid/qid/aid-		(-"-)
+    * D surveys      	-sid/name/ltid-			(sid,name,ltid)
+    * D questions   	-qid/sid/ltid-			(-"-)
+    * answers     	-aid/paid/sid/qid/itype/ltid-   (-"-)
+    * atypes            -atid/name-                     (-"-)
+    * D language    	-lab-				(lab,text)
+    * D langtext       	-lab/ltid-			(ltid,lab,text,ref)
+
+  * answer types
+    * radio, check, select, input
+    * hierarchie combinations - radio radio - ja:{modem,isdn,dsl,sonstige}
+    * answer hierarchies through paid, highest => paid = null
+      * (null,aid1)
+             (paid,aid)
+                  (paid,aid)
+      * (null,aid2)
+             (paid,aid)
+                  (paid,aid)
+
+  * multiple pages
+    * cookies - tmp storage
+    * token
+
+  * survey checker
+  * confirm/submit
+    * insert as transaction
+    * inside this transaction, acid counter to avoid double inserts
+
 

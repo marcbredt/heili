@@ -2,22 +2,18 @@
 
 namespace core\control\handler;
 use core\util\string\StringUtil as StringUtil;
-use core\object\LoggableObject as LoggableObject;
+use core\util\param\Validator as Validator;
 use core\control\Timer as Timer;
 use core\control\Semaphore as Semaphore;
-use core\exception\ParamNotValidException as ParamNotValidException;
 use core\exception\shm\SemaphoreException as SemaphoreException;
+use core\exception\param\ParamNotValidException as ParamNotValidException;
 
 /**
  * Handle a semaphore. Acquiring/releasing/removing.
- * Extending LoggableObject allows this object to use a FileLogger avoiding
- * errors upon serialization as any resource or file handles cannot be
- * serialized.
  * @author Marc Bredt
- * @see LoggableObject
  * @see FileLogger
  */
-class SemaphoreHandler extends LoggableObject {
+class SemaphoreHandler {
 
   /**
    * Semaphore which will be acquired.
@@ -32,19 +28,23 @@ class SemaphoreHandler extends LoggableObject {
   /**
    * Initialize a semaphore that can be handled by the
    * functions provided by this class.
+   * @param $sem semaphore to load
    * @throws ParamNotValidException
    * @return true if loading the semaphore was successful
    */ 
   public function load($sem = null) {
-    if(strncmp(gettype($sem),"object",6)==0
-       && strncmp(get_class($sem),"core\control\Semaphore",
-                    strlen(get_class($sem)))==0) {
+
+    global $filelogger;
+
+    if(Validator::isa($sem,"object") 
+       && Validator::isclass($sem,"core\control\Semaphore")) {
+
       $this->semaphore = $sem;
       $this->semaphore->create();
       return true;
 
     } else {
-      $this->log(__METHOD__.": %",
+      $filelogger->log("%",
                  array(new ParamNotValidException(
                          "sem(core\control\Semaphore)=".
                            StringUtil::get_object_value($sem))));
@@ -72,12 +72,15 @@ class SemaphoreHandler extends LoggableObject {
    */
   public function acquire($timeout = 30, $tries = 3) {
 
+    global $filelogger;
+
     // set and start the timer
     $timer = null;
-    if(strncmp(gettype($timeout),"integer",7)==0 && $timeout>0)
+    if(Validator::isa($timeout,"integer") && $timeout>0)
       $timer = new Timer($timeout);
     if($timer===null) {
-      $this->log(__METHOD__.": %.", array(new TimerException("creation failed")));
+      $filelogger->log("%.", 
+                       array(new TimerException("creation failed")));
       throw(new TimerException("creation failed"));
     }
     $timer->start();
@@ -85,8 +88,9 @@ class SemaphoreHandler extends LoggableObject {
     // now try to acquire a semaphore
     $acquired = false;
     $try = 1;
-    while(!is_null($this->semaphore->get_sem_res()) && $acquired===false
-          && $timer!==null && $try <= $this->semaphore_max_try) {
+    while(!Validator::isa($this->semaphore->get_sem_res(),"null") 
+          && $acquired===false && $timer!==null 
+          && $try <= $this->semaphore_max_try) {
 
       // use sem_acquire with $nowait flag to append a timer
       // NOTE: warnings should be suppressed here any error should throw an 
@@ -95,7 +99,7 @@ class SemaphoreHandler extends LoggableObject {
   
       // retart the timer
       if($timer->get()==0 && $timer->get_timed_out()) { 
-        $this->log(__METHOD__.": Acquiring. Try #%. Timer timed out.",
+        $filelogger->log("Acquiring. Try #%. Timer timed out.",
                    array($try));
         $try++;
         $timer->start();
@@ -103,7 +107,7 @@ class SemaphoreHandler extends LoggableObject {
     }
 
     if($acquired===false) {
-      $this->log(__METHOD__.": %.",
+      $filelogger->log("%.",
                  array(new SemaphoreException("acquisition failed",0)));
       throw(new SemaphoreException("acquisition failed",0));
     }
@@ -120,13 +124,16 @@ class SemaphoreHandler extends LoggableObject {
    * @return true if the semaphore was release otherwise false
    */
   public function release($timeout = 30, $tries = 3) {
+   
+    global $filelogger;
 
     // set and start the timer
     $timer = null;
-    if(strncmp(gettype($timeout),"integer",7)==0 && $timeout>0) 
+    if(Validator::isa($timeout,"integer") && $timeout>0) 
       $timer = new Timer($timeout);
     if($timer===null) {
-      $this->log(__METHOD__.": %.", array(new TimerException("creation failed")));
+      $filelogger->log("%.", 
+                       array(new TimerException("creation failed")));
       throw(new TimerException("creation failed"));
     }
     $timer->start();
@@ -134,15 +141,16 @@ class SemaphoreHandler extends LoggableObject {
     // now try to acquire a semaphore
     $released = false;
     $try = 1;
-    while(!is_null($this->semaphore->get_sem_res()) && $released===false
-          && $timer!==null && $try <= $this->semaphore_max_try) {
+    while(!Validator::isa($this->semaphore->get_sem_res(),"null") 
+          && $released===false && $timer!==null 
+          && $try <= $this->semaphore_max_try) {
 
       // use sem_acquire with $nowait flag to append a timer
       $released = @sem_release($this->semaphore->get_sem_res());
   
       // retart the timer
       if($timer->get()==0 && $timer->get_timed_out()) { 
-        $this->log(__METHOD__.": Releasing. Try #%. Timer timed out.",
+        $filelogger->log("Releasing. Try #%. Timer timed out.",
                    array($try));
         $try++;
         $timer->start();
@@ -151,7 +159,7 @@ class SemaphoreHandler extends LoggableObject {
     
     // if releasing failed 
     if($released===false) {
-      $this->log(__METHOD__.": %.",
+      $filelogger->log("%.",
                  array(new SemaphoreException("release failed",1)));
       throw(new SemaphoreException("release failed",1));
     }
@@ -164,8 +172,8 @@ class SemaphoreHandler extends LoggableObject {
    * @return true on successful removal otherwise false
    */
   public function remove() {
-    return (!is_null($this->semaphore->get_sem_res())
-            && strncmp(gettype($this->semaphore->get_sem_res()),"resource",8)==0 ?
+    return (!Validator::isa($this->semaphore->get_sem_res(),"null")
+            && Validator::isa($this->semaphore->get_sem_res(),"resource") ?
               sem_remove($this->semaphore->get_sem_res()) : true);
   }
 

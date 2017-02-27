@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!-- colum definitions -->
+<form module="foo" name="bar" type="grid" method="get" action="" roles="admin,user">
+
+    <element group="entries" name="atable.eins" title="$language->get('selection')" show="y"
+             disabled="n" required="y" type="textarea" btype="submit" regex="^[1-9]+[0-9]*$" 
+             source="crop.jpg" size="4" length="10" value="$language->get('selection')" 
+             multiple="n" />
+    
+    <element name="atable.zwei" title="Eins" show="y" disabled="n" required="y"
+             type="text" regex="^[1-9]+[0-9]*$" size="5" length="10" />
+
+    <element group="globals" name="table.sechs" title="Sechs" show="y" disabled="y" required="y" 
+             type="submit" value="$language->get('submit')" />
+
+    <!--
+    <element group="entries" name="table.null" title="Null" show="y" disabled="y" required="y" type="textarea" cols="5" rows="1" value="$language->get('hello')" regex="[0-9]{0,1}"/>
+    <element group="entries" name="table.eins" title="Eins" show="y" disabled="y" required="y" type="text" regex="[a-z]*" size="5" length="10" value="text" />
+    <element group="entries" name="table.zwei" title="Zwei" show="y" disabled="y" required="y" type="text" regex="[0-9]{0,1}" size="5" length="4" min="0" max="3" />
+    <element group="entries" name="table.drei" title="Drei" show="y" disabled="y" required="y" type="password" regex="[0-9]{8}[0-9]*" />
+    <element group="entries" name="table.vier" title="Vier" show="y" disabled="y" required="y" type="checkbox" value="y" /> 
+    <element group="entries" name="table.fuenf" title="Fünf" show="y" disabled="y" required="y" type="radio" />
+
+    <element group="entries" name="table.sechs" title="Sechs" show="y" disabled="y" required="y" type="submit" value="$language->get('submit')" />
+    <element group="entries" name="table.sieben" title="Sieben" show="y" disabled="y" required="y" type="reset" value="$language->get('abort')" />
+    <element group="entries" name="table.elf" title="Elf" show="y" disabled="y" required="y" type="image" value="$language->get('submit')" source="crop.jpg" />
+    <element group="entries" name="table.acht" title="Acht" show="y" disabled="y" required="y" type="button" value="button" />
+
+    <element group="entries" name="table.neun" title="Neun" show="y" disabled="y" required="y" type="hidden" regex="[a-z]{1,}" value="hval" />
+    <element group="entries" name="table.zehn" title="Zehn" show="y" disabled="y" required="y" type="file" />
+
+    <element group="entries" name="table.zwoelf" title="$language->get('role')" show="y" disabled="y" required="y" type="select" regex="[a-z]+" size="1" />
+    -->
+
+</form>

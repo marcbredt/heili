@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <errors default="0000">
+    <error eid="0000" name="unknown">
+      <en>Sorry. This should not have happened.</en>
+    </error>
+    <error eid="0001" name="paramnotarray">
+      <en>Parameters not provides as array.</en>
+    </error>
+    <error eid="0002" name="paramnumber">
+      <en>Parameters not provides as array.</en>
+    </error>
+    <error eid="0003" name="dbexception">
+      <en>Database connection problem occured.</en>
+    </error>
+    <error eid="0004" name="langexception">
+      <en>Language error detected.</en>
+    </error>
+    <error eid="0005" name="maskerror">
+      <en>Content error occured.</en>
+    </error>
+    <error eid="0006" name="loginexception">
+      <en>Credentials entered are invalid.</en>
+    </error>
+    <error eid="0007" name="authexception">
+      <en>Authentication error occured.</en>
+    </error>
+    <error eid="0008" name="reqexception">
+      <en>Request error occured.</en>
+    </error>
+    <error eid="0009" name="cookieexception">
+      <en>Cookie error occured.</en>
+    </error>
+    <error eid="0010" name="sessionexception">
+      <en>Session error occured.</en>
+    </error>
+    <error eid="0011" name="templateexception">
+      <en>Template error occured.</en>
+    </error>
+    <error eid="0012" name="moduleexception">
+      <en>Module error occured.</en>
+    </error>
+    <error eid="00013" name="rightexception">
+      <en>Rights error occured.</en>
+    </error>
+    <error eid="00014" name="filterexception">
+      <en>Invalid input passed.</en>
+    </error>
+    <error eid="00015" name="actionexception">
+      <en>Action errors occured.</en>
+    </error>
+  </errors>
+</root>

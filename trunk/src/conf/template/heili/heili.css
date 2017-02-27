@@ -1,0 +1,133 @@
+body {
+  margin: 0px 0px 0px 0px;
+  padding: 0px 0px 0px 0px;
+  /*font-family: Montserrat;*/
+  font-family: Verdana,Helvetica;
+  font-size: 13px;
+}
+
+.width_max {
+  width: 100%;
+}
+
+.height_max {
+  height:100%;
+}
+
+#height_max-head {
+  height:100%;
+}
+
+.loggedin_greeter {
+  width: 200px;
+}
+
+.width_500px {
+  width: 500px;
+}
+
+.text_left {
+  text-align: left;
+}
+
+.text_right {
+  text-align: right;
+}
+
+.bar {
+  background-color: #003344;  
+  padding: 20px 20px 20px 20px;
+  border: 3px solid white;
+}
+
+.error {
+  border: 3px solid red;
+  background-color: #ff4400; 
+  font-weight: bold;
+  padding: 20px 20px 20px 20px;
+}
+
+.table_inner {
+  color: #ffffff;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: bold;  
+}
+
+.table_inner td {
+  padding: 3px 3px 3px 3px;
+}
+
+.table_inner {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+#contents {
+  padding: 20px 20px 20px 20px;
+  height: 100%;
+  background-color: #aaee88;  
+}
+
+.text_white {
+  color: #ffffff;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.text_black {
+  color: #000000;
+}
+
+.input {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.input_select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.input_button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.input_button_link {
+  border: none;
+  outline: none;
+  background: none;
+  cursor: pointer;
+  padding: 0px;
+  text-decoration: underline;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: bold;
+}
+
+.div_left {
+  float:left;
+  margin-left:10px;
+}
+
+.div_text_margin_top_3px {
+  margin-top:3px;
+}
+
+.div_margin_bottom_10px {
+  margin-bottom:10px;
+}
+
+.div_margin_top_1_px {
+  margin-top:10px;
+}
+
+.text_white {
+  color:#ffffff;
+}
+
+.text_bold {
+  font-weight:bold;
+}
+

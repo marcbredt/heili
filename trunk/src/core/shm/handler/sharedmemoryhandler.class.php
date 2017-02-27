@@ -1,18 +1,19 @@
 <?php
 
 namespace core\shm\handler;
-use core\object\LoggableObject as LoggableObject;
+use core\util\key\Key as Key;
+use core\util\param\Validator as Validator;
 use core\control\Timer as Timer;
 use core\control\Semaphore as Semaphore;
 use core\control\handler\SemaphoreHandler as SemaphoreHandler;
 use core\shm\SharedMemorySegment as SharedMemorySegment;
 use core\shm\SharedMemoryReader as SharedMemoryReader;
 use core\shm\SharedMemoryWriter as SharedMemoryWriter;
-use core\exception\TimerException as TimerException;
+use core\exception\control\TimerException as TimerException;
+use core\exception\param\ParamNotValidException as ParamNotValidException;
 use core\exception\shm\InvalidAccessTypeException as InvalidAccessTypeException;
 use core\exception\shm\SemaphoreException as SemaphoreException;
 use core\exception\shm\SegmentException as SegmentException;
-use core\exception\shm\ParamNotValidException as ParamNotValidException;
 use core\exception\shm\ReadAccessException as ReadAccessException;
 use core\exception\shm\WriteAccessException as WriteAccessException;
 
@@ -21,7 +22,7 @@ use core\exception\shm\WriteAccessException as WriteAccessException;
  * via semaphore functions.
  * @author Marc Bredt
  */
-class SharedMemoryHandler extends LoggableObject {
+class SharedMemoryHandler {
 
   /**
    * Shared memory segment.
@@ -38,30 +39,37 @@ class SharedMemoryHandler extends LoggableObject {
    * Setup a shared memory handler to control access to the 
    * shared memory segment and initialize a shared memory segment.
    * @param $load decide weather this handler should load it
-   * @param $access_type access type 
-   * @param $read_limit amount of processes that could access the segment 
-   *                    simultaniously 
-   * @param $write_limit amount of processes that could access the segment 
-   *                     simultaniously 
+   * @param $seg_size integer characterizing the segment size
+   * @param $lower integer representing the lower border currently 
+   *                     reached through the usage of segments and semaphores
+   *                     marks the beginning to search for free keys to use
+   *                     for resource creation of segments and semaphores
+   * @param $upper integer representing the upper key border 
+   * @param $seg_access_type the segment's access type (ro,wo,rw)
+   * @param $sem_access_type the segment's access type (ro,wo,rw)
+   * @param $sem_read_limit amount of processes that could access the segment 
+   *                        through a semaphore simultaniously while reading
+   * @param $sem_write_limit amount of processes that could access the segment 
+   *                         through a semaphore simultaniously while writing
    * @throws 
    */
-  public function create($load = true, 
+  public function create($load = true, $seg_size = 1024, 
+                         $lower = null, $upper = null,
+                         $sem_read_limit = 100, $sem_write_limit = 1,
                          $seg_access_type = 2, $sem_access_type = 0, 
-                         $seg_size = 1024,  
-                         $read_limit = 10, $write_limit = 1,
-                         $pid_seg = "0", 
-                         $pid_sem_read = "a", $pid_sem_write = "A", 
                          $ac_read_timeout = 60, $ac_write_timeout = 60) {
  
     // setup the read and write semaphores
-    $sem_read = $this->create_semaphore($pid_sem_read, $sem_access_type,
-                                               $read_limit, $ac_read_timeout);
-    $sem_write = $this->create_semaphore($pid_sem_write, $sem_access_type,
-                                                $write_limit, $ac_write_timeout);
+    $sem_read = $this->create_semaphore($sem_access_type, $sem_read_limit,
+                                        $ac_read_timeout, $lower, $upper);
+    // TODO: update lower on success - $sem_read->get_sem_key()
+    //       therefor need to connect to the main manager segment
+    $sem_write = $this->create_semaphore($sem_access_type, $sem_write_limit,
+                                         $ac_write_timeout, $lower+1, $upper);
     
     // setup the segment
-    $segment = $this->create_segment($pid_seg, $seg_size, $seg_access_type,  
-                                     $sem_read, $sem_write);
+    $segment = $this->create_segment($seg_size, $seg_access_type,  
+                                     $sem_read, $sem_write, $lower, $upper);
 
     // if the segment should be loaded the handler attributes will be
     // set to manage access on it
@@ -84,26 +92,34 @@ class SharedMemoryHandler extends LoggableObject {
 
   /**
    * Create the shared memory segment.
-   * @param $pid project identifier passed onto ftok().
    * @param $size size of the sement 
+   * @param $actype access type for the segment (ro,wo,rw)
    * @param $semr semaphore to control read access
    * @param $semw semaphore to control write access
+   * @param $lower lower border to start searching unused keys of 
+   * @param $upper upper border to stop searching unused keys at 
    * @return a SharedMemorySegment
    * @see SharedMemorySegment
+   * @throws ParamNotValidException
    */
-  private function create_segment($pid = "0", $size = 1024, $actype = 2,  
-                                  $semr = null, $semw = null) {
+  private function create_segment($size = 1024, $actype = 2,  
+                                  $semr = null, $semw = null,
+                                  $lower = null, $upper = null) {
   
+    // create a segment
     $segment = new SharedMemorySegment();
 
-    // set project id
-    if(strncmp(gettype($pid),"string",6)==0 && strlen($pid)==1)
-      $segment->set_shm_seg_proj_id($pid);
-    else
-      $segment->set_shm_seg_proj_id("0");
+    // get a key for the segment
+    $segment_key = null;
+    try {
+      $segment_key = new Key("seg",$lower,$upper);
+      $segment->set_shm_seg_key($segment_key->get());
+    } catch(ParamNotValidException $pnve) {
+      throw($pnve);
+    }
 
     // set the size
-    if(strncmp(gettype($size),"integer",7)==0 && $size>0)
+    if(Validator::isa($size,"integer") && $size>0)
       $segment->set_shm_seg_size($size);
     else
       $segment->set_shm_seg_size(1024);
@@ -115,9 +131,6 @@ class SharedMemoryHandler extends LoggableObject {
     $segment->set_shm_seg_sem_read($semr); 
     $segment->set_shm_seg_sem_write($semw); 
 
-    // setup the segment key
-    $segment->set_shm_seg_key();
-
     // setup the default segment layout, override it when needed
     $segment->set_shm_seg_layout();
 
@@ -128,36 +141,39 @@ class SharedMemoryHandler extends LoggableObject {
 
   /**
    * Create a semaphore. Used to setup a semaphore with specific values.
-   * @param $pid project identifier passed ont ftok().
    * @param $actype access type for this semaphore
    * @param $limit maximum number that can access it simultaneously
    * @param $ac_timeout timeout for acquiring the semaphore created
+   * @param $lower lower border to start key search of
+   * @param $upper upper border to stop searching unused keys at 
    * @return a semaphore
    * @see Semaphore
+   * @throws ParamNotValidException
    */
-  private function create_semaphore($pid = "0", $actype = 0, 
-                                    $limit = 1, $ac_timeout = 60) {
+  private function create_semaphore($actype = 0, $limit = 1, $ac_timeout = 60, 
+                                    $lower = null, $upper = null) {
 
     $semaphore = new Semaphore();
 
-    // set the project identifier
-    if(strncmp(gettype($pid),"string",6)==0
-       && strlen($pid)==1)
-      $semaphore->set_sem_proj_id($pid);
-    else
-      $semaphore->set_sem_proj_id("0");
+    // get a key for the semaphore
+    try {
+      $semaphore_key = new Key("sem",$lower,$upper);
+      $semaphore->set_sem_key($semaphore_key->get());
+    } catch(ParamNotValidException $pnve) {
+      throw($pnve);
+    }
 
     // set access type (for restoring)
     $semaphore->set_sem_access_type($actype);
 
     // set max procs
-    if(strncmp(gettype($limit),"integer",7)==0 && $limit>0)
+    if(Validator::isa($limit,"integer") && $limit>0)
       $semaphore->set_sem_max_acquire($limit);
     else
       $semaphore->set_sem_max_acquire(1);
 
     // set acquisition timeout for the semaphore
-    if(strncmp(gettype($ac_timeout),"integer",7)==0 && $ac_timeout>0)
+    if(Validator::isa($ac_timeout,"integer") && $ac_timeout>0)
       $semaphore->set_sem_acquire_timeout($ac_timeout);
     else
       $semaphore->set_sem_acquire_timeout(60);
@@ -166,22 +182,97 @@ class SharedMemoryHandler extends LoggableObject {
     return $semaphore;
   }
 
-   /**
-    * Set a specific shared memory segment as the one that could
-    * be used using this SharedMemoryHandler.
-    * @param mgmtkey entry of the default management segment for a
-    *                SharedMemoryManager
-    * @return true if loading was successful
-    * @see SharedMemoryManager
-    */
-   public function load($mgmtentry = null) {
-     // $this->shm_seg = ...;
-     // $this->get_shm_seg()->shm_sem_read = ...;
-     // $this->shm_seh = new SemaphoreHandler($this->shm_sem_read);
+  /**
+   * Set a specific shared memory segment as the one that could
+   * be used using this SharedMemoryHandler.
+   * @param $seg shared memory segment to load
+   * @return true if loading was successful, otherwise false
+   * @throws SegmentException
+   * @see SharedMemoryManager
+   */
+  public function load($seg = null) {
 
-     // TODO: set necessary segment attributes from manager segment
-     //       key, size, type, atype, layout, semr, semw
+     // verify its a real shared memory segment
+     if(self::validate($seg)) $this->shm_seg = $seg;
+    
+     // setup a semaphore handler if it does not exist yet
+     if(Validator::isa($this->shm_seh,"null") ||
+        !Validator::isclass($this->shm_seh,"core\control\handler\SemaphoreHandler")) 
+       $this->shm_seh = new SemaphoreHandler();
+
    }
+
+  /**
+   * Validate a segment. This is necessary when loading segments.
+   * Especially the segment's attributes need to be validated like its
+   * key, size, type, atype, layout, semr, semw 
+   * @param $seg shared memory segment to load
+   * @return true if all segment parameters are valid, otherwise false
+   */ 
+  public static function validate($seg = null) {
+
+     global $filelogger;
+
+     $filelogger->log("Validating segment %", array($seg));
+
+     // verify its a real shared memory segment
+     if(!Validator::isclass($seg,"core\shm\SharedMemorySegment")) {
+       return false;
+
+     // verify te segment's key
+     } else if(!Validator::isa($seg->get_shm_seg_key(),"integer")) {
+       return false;
+
+     // verify te segment's id
+     } else if(!Validator::isa($seg->get_shm_seg_id(),"integer")
+               || $seg->get_shm_seg_id()<0) {
+       return false;
+
+     // verify te segment's size
+     } else if(!Validator::isa($seg->get_shm_seg_size(),"integer")
+               || $seg->get_shm_seg_size()<0) {
+       return false;
+
+     // verify te segment's type
+     } else if(!Validator::in($seg->get_shm_seg_type(),
+                              $seg->get_shm_seg_supported_types())) {
+       return false;
+
+     // verify te segment's access type
+     } else if(!Validator::in($seg->get_shm_seg_access_type(),
+                              $seg->get_shm_seg_valid_access_types())) {
+       return false;
+
+     // verify te segment's layout
+     } else if(Validator::isempty($seg->get_shm_seg_layout())) {
+       return false;
+
+     // TODO: better check for semaphore values, especially the resource and key
+     //         need to be valid which means the semaphores need to be accessible
+     //       until then checks are restricted to type checks for key and resource
+
+     // verify te segment's read semaphore
+     } else if(!Validator::isclass($seg->get_shm_seg_sem_read(),"core\control\Semaphore")
+               || !Validator::isa($seg->get_shm_seg_sem_read()->get_sem_res(),
+                                  "resource")
+               || Validator::isa($seg->get_shm_seg_sem_read()->get_sem_key(),
+                                 "null")) {
+       return false;
+
+     // verify te segment's write semaphore
+     } else if(!Validator::isclass($seg->get_shm_seg_sem_write(),"core\control\Semaphore")
+               || !Validator::isa($seg->get_shm_seg_sem_write()->get_sem_res(),
+                                  "resource")
+               || Validator::isa($seg->get_shm_seg_sem_write()->get_sem_key(),
+                                 "null")) {
+       return false;
+
+     }
+
+    // if all checks passed it is a valid shared memory segment
+    return true;
+    
+  }
 
   /**
    * Allocate a shared memory segment.
@@ -195,6 +286,8 @@ class SharedMemoryHandler extends LoggableObject {
    * @return true if allocation was successful
    */
   public function alloc() {
+
+    global $filelogger;
 
     // if the segment is not available try to create it but show errors too
     // just suppressing it here would not show failures when creating it
@@ -212,11 +305,17 @@ class SharedMemoryHandler extends LoggableObject {
 
     }
 
-    // create the semaphores
-    $this->get_shm_seh()->load(
-      $this->get_shm_seg()->get_shm_seg_sem_write());
-    $this->get_shm_seh()->load(
-      $this->get_shm_seg()->get_shm_seg_sem_read());
+    // create/load the semaphores
+    try {
+      $this->get_shm_seh()->load(
+        $this->get_shm_seg()->get_shm_seg_sem_write());
+      $this->get_shm_seh()->load(
+        $this->get_shm_seg()->get_shm_seg_sem_read());
+    } catch(ParamNotValidException $pnve) {
+      $filelogger->log("Loading semaphores (r=%, w=%) failed.",
+                 array($this->get_shm_seg()->get_shm_seg_sem_read(),
+                       $this->get_shm_seg()->get_shm_seg_sem_write()));
+    }
 
     // check if we got a positive integer id for the segment
     $return = false;
@@ -260,7 +359,8 @@ class SharedMemoryHandler extends LoggableObject {
                // destroy and close the attachement to the segment
                $this->get_shm_seg()->get_shm_seg_id()>-1
                && shmop_delete($this->get_shm_seg()->get_shm_seg_id())
-               && is_null(shmop_close($this->get_shm_seg()->get_shm_seg_id()))
+               && Validator::isa(
+                    shmop_close($this->get_shm_seg()->get_shm_seg_id()),"null")
                && $this->get_shm_seg()->get_shm_seg_id(
                     $this->get_shm_seg()->set_shm_seg_id(-1))==-1
 
@@ -274,15 +374,15 @@ class SharedMemoryHandler extends LoggableObject {
 
                // unset handler variables
                && $this->set_shm_seg(null) 
-               && is_null($this->get_shm_seg())
+               && Validator::isa($this->get_shm_seg(),"null")
                && $this->set_shm_seh(null)
-               && is_null($this->get_shm_seh())
+               && Validator::isa($this->get_shm_seh(),"null")
                && $this->set_shm_sem_read(null)
-               && is_null($this->get_shm_sem_read())
+               && Validator::isa($this->get_shm_sem_read(),"null")
                && $this->set_shm_sem_write(null)
-               && is_null($this->get_shm_sem_write())
+               && Validator::isa($this->get_shm_sem_write(),"null")
                && $this->set_shm_access_type(null)
-               && is_null($this->get_shm_access_type())
+               && Validator::isa($this->get_shm_access_type(),"null")
              );
     }
    
@@ -392,38 +492,59 @@ class SharedMemoryHandler extends LoggableObject {
    *       root) or is able to connect with the same user (the application
    *       itself). That could be useful for live debugging.
    * 
+   * @param $mode attaching mode, controls neccessary semaphore access
    * @throws InvalidAccessTypeException
    * @throws SemaphoreException
    * @return true if attaching successed, otherwise false
    *         the shared memory operational id can be gained
    *         from the segment itself
    */
-  public function attach() {
+  private function attach($mode = "r") {
+ 
+    global $filelogger;
    
     // TODO: only attach if all requirements present 
     //       otherwise get_shm_seg_sem_* will fail if the segment 
     //       wasn't created properly
+    
+    // get a semaphore handler first, but only if the access mode is valid
+    $sh = null;
+    if(Validator::in($mode, array("r","w"))) {
+      $sh = $this->get_shm_seh();
+    } else {
+      $filelogger->log("%", 
+                 array(new SemaphoreException("invalid mode",2)));
+      throw(new SemaphoreException("invalid mode",2));
+    }
 
-    // acquire both semaphores 
-    // TODO: aquire write semaphore only on put calls and avoid locking 
-    //       all reading processes
-    $sh = $this->get_shm_seh();
-    $sr = $this->get_shm_seg()->get_shm_seg_sem_read();
-    $sw = $this->get_shm_seg()->get_shm_seg_sem_write();
+    // acquire write semaphore(s) only on put calls and avoid locking 
+    // all reading processes
+    $sr = null;
+    if($mode=="r") $sr = $this->get_shm_seg()->get_shm_seg_sem_read();
 
-    // acquire read semaphore
-    $sh->load($sr);
-    $sr_ac = $sh->acquire();
-    // acquire write semaphore
-    $sh->load($sw);
-    $sw_ac = $sh->acquire();
+    $sw = null; 
+    if($mode=="w") $sw = $this->get_shm_seg()->get_shm_seg_sem_write();
+    // TODO: wait for all outstanding reading processes to keep data consistent
+
+    // load the semaphores and try to acquire them
+    $sr_ac = null; $sw_ac = null;
+    try {
+      $sh->load($sr);
+      $sr_ac = $sh->acquire();
+      $sh->load($sw);
+      $sw_ac = $sh->acquire();
+    } catch(ParamNotValidException $pnve) {
+      $filelogger->log("Loading semaphores (r=%, w=%) failed.",
+                 array($this->get_shm_seg()->get_shm_seg_sem_read(),
+                       $this->get_shm_seg()->get_shm_seg_sem_write()));
+    }
 
     // if acquiring the semaphores was successful, try to create or open
     // the shared memory segment 
     $aid = -1;
     // reset any previously created attachment
     $this->get_shm_seg()->set_shm_seg_id($aid);
-    if($sr_ac!==false && $sw_ac!==false) {
+    if(($mode=="r" && $sr_ac!==false) || ($mode=="w" && $sw_ac!==false)) {
 
       // NOTE: access segments with different segment access types 
       //         regarding SharedMemorySegment::get_shm_seg_access_type()
@@ -438,25 +559,29 @@ class SharedMemoryHandler extends LoggableObject {
       if($this->get_shm_seg()->get_shm_seg_access_type()===0) {
         $aid = $this->open($this->get_shm_seg()->get_shm_seg_key(),
                            "a", 0400, $this->get_shm_seg()->get_shm_seg_size(), 3);
-        $this->log(__METHOD__.": Attached (ro) to %.", array($this->get_shm_seg()));
+        $filelogger->log("Attached (ro) to %.", 
+                         array($this->get_shm_seg()));
         $this->get_shm_seg()->set_shm_seg_id($aid);
     
       // read and writeable, write only
       } else if($this->get_shm_seg()->get_shm_seg_access_type()===1) {
         $aid = $this->open($this->get_shm_seg()->get_shm_seg_key(),
                            "w", 0200, $this->get_shm_seg()->get_shm_seg_size(), 3);
-        $this->log(__METHOD__.": Attached (wo) to %.", array($this->get_shm_seg()));
+        $filelogger->log("Attached (wo) to %.", 
+                         array($this->get_shm_seg()));
         $this->get_shm_seg()->set_shm_seg_id($aid);
 
       } else if($this->get_shm_seg()->get_shm_seg_access_type()===2) {
         $aid = $this->open($this->get_shm_seg()->get_shm_seg_key(),
                            "w", 0600, $this->get_shm_seg()->get_shm_seg_size(), 3);
-        $this->log(__METHOD__.": Attached (rw) to %.", array($this->get_shm_seg()));
+        $filelogger->log("Attached (rw) to %.",
+                         array($this->get_shm_seg()));
         $this->get_shm_seg()->set_shm_seg_id($aid);
     
       } else {
-        $this->log(__METHOD__.": %", array(new InvalidAccessTypeException(
-                          $this->get_shm_seg()->get_shm_seg_access_type())));
+        $filelogger->log("%", 
+                         array(new InvalidAccessTypeException(
+                           $this->get_shm_seg()->get_shm_seg_access_type())));
         throw(new InvalidAccessTypeException(
                 $this->get_shm_seg()->get_shm_seg_access_type()));
       }
@@ -487,15 +612,18 @@ class SharedMemoryHandler extends LoggableObject {
   private function open($key = null, $mode = "w", $perms = 0600, $size = 1024,
                         $timeout = 2, $tries = 3) {
 
+    global $filelogger;
+
     // set and start the timer
     $timer = null;
-    if(strncmp(gettype($timeout),"integer",7)==0
-       && $timeout>0) $timer = new Timer($timeout);
+    if(Validator::isa($timeout,"integer") && $timeout>0) 
+      $timer = new Timer($timeout);
     // run the timer
     if($timer!==null) { 
       $timer->start();
     } else {
-      $this->log(__METHOD__.": %.", array(new TimerException("creation failed")));
+      $filelogger->log("%.", 
+                       array(new TimerException("creation failed")));
       throw(new TimerException("creation failed"));
     }
 
@@ -506,8 +634,8 @@ class SharedMemoryHandler extends LoggableObject {
       // try to create or attach to the segment
       $sid = @shmop_open($key, $mode, $perms, $size);
       if($timer->get()===0 && $timer->get_timed_out()) {
-        $this->log(__METHOD__.": Attaching segment. Try #%. Timer timed out.", 
-                   array($try));
+        $filelogger->log("Attaching segment. ".
+                          "Try #%. Timer timed out.", array($try));
         $try++;
         $timer->start();
       }
@@ -515,8 +643,8 @@ class SharedMemoryHandler extends LoggableObject {
 
     // throw some exceptions if something failed
     if($sid===false) {
-      $this->log(__METHOD__.": %", 
-                 array(new SegmentException("creation/attaching failed",5))); 
+      $filelogger->log("%", 
+        array(new SegmentException("creation/attaching failed",5))); 
       throw(new SegmentException("creation/attaching failed",5));
     }
 
@@ -528,7 +656,9 @@ class SharedMemoryHandler extends LoggableObject {
    * Detatch from a shared memory segment.
    * @return true if detaching was sucessful, otherwise false
    */
-  public function detach() {
+  private function detach() {
+
+    global $filelogger;
 
     // detach from segment first
     $seg_closed = false;
@@ -539,11 +669,22 @@ class SharedMemoryHandler extends LoggableObject {
 
     // then release read semaphore first as write semaphore
     // is the ultimate one in read/write scenarios
-    $this->get_shm_seh()->load(
-      $this->get_shm_seg()->get_shm_seg_sem_read());
+    try {
+      $this->get_shm_seh()->load(
+        $this->get_shm_seg()->get_shm_seg_sem_read());
+    } catch(ParamNotValidException $pnve) {
+      $filelogger->log("Loading read semaphore failed (%).",
+                 array($this->get_shm_seg()->get_shm_seg_sem_read()));
+    }
     $rel_r = $this->get_shm_seh()->release();
-    $this->get_shm_seh()->load(
-      $this->get_shm_seg()->get_shm_seg_sem_write());
+
+    try {
+      $this->get_shm_seh()->load(
+        $this->get_shm_seg()->get_shm_seg_sem_write());
+    } catch(ParamNotValidException $pnve) {
+      $filelogger->log("Loading write semaphore failed (%).",
+                 array($this->get_shm_seg()->get_shm_seg_sem_write()));
+    }
     $rel_w = $this->get_shm_seh()->release();
 
     return ($seg_closed && $rel_r && $rel_w);
@@ -601,11 +742,13 @@ class SharedMemoryHandler extends LoggableObject {
    * @see SharedMemorySegment::set_shm_seg_layout
    */
   public function put($values = array(), $key = -1) {
-   
+  
+    global $filelogger;
+ 
     $success = false;
 
     // attach to the shared memory segment first
-    $this->attach();
+    $this->attach("w");
 
     // write 
     $shm_writer = null;
@@ -613,11 +756,12 @@ class SharedMemoryHandler extends LoggableObject {
     if($this->get_shm_seg()->get_shm_seg_access_type()===2
        || $this->get_shm_seg()->get_shm_seg_access_type()===3) {
       $shm_writer = new SharedMemoryWriter($this->get_shm_seg());
-      $this->log(__METHOD__.": %",array($shm_writer));
+      $filelogger->log("%", array($shm_writer));
       $success = ($shm_writer->write($values,$key)>0);
 
     } else {
-      $this->log(__METHOD__.": %", array(new WriteAccessException($this->get_shm_seg())));
+      $filelogger->log("%", 
+                       array(new WriteAccessException($this->get_shm_seg())));
       throw(new WriteAccessException($this->get_shm_seg()));
 
     }
@@ -658,10 +802,12 @@ class SharedMemoryHandler extends LoggableObject {
   public function get($index = -1,
                       $skey = "", $pos = -1, $val = null, $full = true) {
 
+    global $filelogger;
+
     // TODO: only attach if all requirements present 
  
     // attach to the shared memory segment first
-    $this->attach();
+    $this->attach("r");
 
     // read ro,rw segments
     $found = "";
@@ -670,16 +816,15 @@ class SharedMemoryHandler extends LoggableObject {
 
       // try to read the element 
       $shm_reader = new SharedMemoryReader($this->get_shm_seg());
-      $this->log(__METHOD__.": %", array($shm_reader));
-      if(strncmp(gettype($index),"integer",7)==0
-         && strncmp(gettype($skey),"string",6)==0
-         && strncmp(gettype($pos),"integer",7)==0
-         && strncmp(gettype($full),"boolean",7)==0) {
+      $filelogger->log("%", array($shm_reader));
+      if(Validator::isa($index,"integer") && Validator::isa($skey,"string")
+         && Validator::isa($pos,"integer") && Validator::isa($full,"boolean")) {
  
         $found = $shm_reader->read($index,$skey,$pos,$val,$full);
 
       } else {
-        $this->log(__METHOD__.": %", array(new ParamNotValidException(__CLASS__."::get()".
+        $filelogger->log("%", 
+                   array(new ParamNotValidException(__CLASS__."::get()".
                      ": index(int)=".var_export($index,true).
                      ", skey(string)=".var_export($skey,true).
                      ", pos(int)=".var_export($pos,true).
@@ -694,7 +839,8 @@ class SharedMemoryHandler extends LoggableObject {
       }
  
     } else {
-        $this->log(__METHOD__.": %", array(new ReadAccessException($this->get_shm_seg())));
+        $filelogger->log("%", 
+                         array(new ReadAccessException($this->get_shm_seg())));
         throw(new ReadAccessExcepton($this->get_shm_seg()));
 
     }
@@ -742,9 +888,9 @@ class SharedMemoryHandler extends LoggableObject {
    * @see SharedMemorySegment
    */
   public function set_shm_seg($segment = null) {
-    if(is_null($segment) || 
-       (strncmp(gettype($segment),"object",6)==0 
-        && strncmp(get_class($segment),"core\shm\SharedMemorySegment",28)==0))
+    if(Validator::isa($segment,"null") || 
+       (Validator::isa($segment,"object") 
+        && Validator::isclass($segment,"core\shm\SharedMemorySegment")))
       return $this->shm_seg = $segment;
     else
       return $this->shm_seg = null;
@@ -766,9 +912,9 @@ class SharedMemoryHandler extends LoggableObject {
    * @see SharedMemoryHandler
    */
   public function set_shm_seh($semhandler = null) {
-    if(is_null($semhandler) ||
-       (strncmp(gettype($semhandler),"object",6)==0 
-        && strncmp(get_class($seghandler),"core\control\handler\SemaphoreHandler",37)==0))
+    if(Validator::isa($semhandler,"null") ||
+       (Validator::isa($semhandler,"object") 
+        && Validator::isaclass($seghandler,"core\control\handler\SemaphoreHandler")))
       return $this->shm_seh = $semhandler;
     else
       return $this->shm_seh = null;

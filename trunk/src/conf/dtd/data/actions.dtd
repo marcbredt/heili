@@ -1,0 +1,7 @@
+<!ELEMENT root (actions+)>
+<!ELEMENT actions (action*)>
+<!ELEMENT action EMPTY>
+<!ATTLIST action active CDATA #REQUIRED name CDATA #REQUIRED
+                 form CDATA #REQUIRED depends CDATA #REQUIRED
+                 handler CDATA #REQUIRED>
+

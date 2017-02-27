@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <!-- 
+    NOTE: each value in $GLOBALS will be checked against this file 
+    NOTE: for the superglobals <> $GLOBALS additional configurations will be used
+          so currently only type checks will be invoked for them here
+  -->
+  <superglobal name="globals" source="GLOBALS">
+
+    <key name="_GET"		type="array" />
+    <key name="_POST"		type="array" />
+    <key name="_COOKIE"		type="array" />
+    <key name="_FILES"		type="array" />
+    <key name="_ENV"		type="array" />
+    <key name="_REQUEST"	type="array" />
+    <key name="_SERVER"		type="array" />
+    <key name="_SESSION"	type="array" />
+ 
+    <!-- application internal globals -->
+    <key name="xmlconfig"		type="class" 
+         value="core\util\xml\XMLConfig" />
+    <key name="autoloader"		type="class" 
+         value="core\autoloader\AutoLoader" />
+    <key name="filelogger"		type="class" 
+         value="core\util\log\FileLogger" />
+    <key name="cookie"			type="class" 
+         value="core\session\Cookie" />
+    <key name="sessionhandler"		type="class" 
+         value="core\session\handler\SessionHandler" />
+    <key name="session"			type="class" 
+         value="core\session\Session" />
+    <key name="exceptionhandler"	type="class" 
+         value="core\exception\handler\ExceptionHandler" />
+    <key name="request"			type="class" 
+         value="core\http\Request" />
+
+    <!-- keys set after request validation -->
+    <!--
+    <key name="user"		type="class" 
+         value="core\session\auth\user\User" />
+    <key name="language"		type="class" 
+         value="core\lang\Language" />
+    -->
+
+  </superglobal>
+
+</root>

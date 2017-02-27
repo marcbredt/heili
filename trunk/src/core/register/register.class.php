@@ -3,16 +3,17 @@
 namespace core\register;
 use \Iterator as Iterator;
 use \Countable as Countable;
-use core\Sortable as Sortable;
+use core\object\Sortable as Sortable;
 
 /**
  * This class implements a simple (array) register.
  * @author Marc Bredt
+ * @see Loggablebject
  */
 abstract class Register implements Iterator, Countable, Sortable  {
 
   /**
-   * Stores the current pointer positionition. Needed forIterator.
+   * Stores the current pointer positionition. Needed for Iterator.
    */
   protected $position = 0;
 

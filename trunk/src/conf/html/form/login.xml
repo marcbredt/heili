@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+  <form module="core" name="login" type="single" mode="horizontal" roles="*">
+
+      <element group="entries" name="a" title="$language->get('user')" show="y"
+               disabled="n" required="y" type="text" size="12" length="50" 
+               value="" tclasses="text_white text_bold" defines="email" roles="*"
+               filters="validate_email,email" />
+    
+      <element group="entries" name="b" title="$language->get('pass')" show="y"
+               disabled="n" required="y" type="password" size="12" length="16"
+               value="" tclasses="text_white text_bold" roles="*"
+               regex="^([a-zA-Z0-9]){8,16}$" defines="password"
+               filters="validate_regexp,email" />
+     
+      <element group="globals" name="c" title="$language->get('login')" show="y"
+               disabled="n" required="y" type="button" btype="submit" 
+               text="$language->get('login')" value="login" iclasses="text_bold"
+               regex="^login$" defines="action" roles="*"
+               filters="validate_regexp" />
+ 
+      <element group="globals" name="d" required="y" type="hidden" 
+               value="Tokenizer::get()" regex="^([a-z]|[0-9]){32}$" 
+               defines="token" roles="*" filters="validate_regexp" />
+
+  </form>
+</root>

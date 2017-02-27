@@ -5,6 +5,7 @@ use \Exception as Exception;
 
 /**
  * This class is used to raise exceptions for invalid DTD files.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class XMLNoValidDTDException extends Exception {

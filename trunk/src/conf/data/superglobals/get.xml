@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <superglobal name="get" source="_GET">
+
+    <key name="core:mask"	type="file"	value="masks.xml" />
+    <key name="core:stree"	type="file"	value="statements.xml" />
+    <key name="core:page"	type="regex"	value="/^[1-9]+[0-9]*$/" />
+
+    <!-- sid belongs to the survey module, it needs to be outsourced in the future -->
+    <key name="survey:sid"	type="regex"	value="/^[1-9]+[0-9]*$/" />
+
+  </superglobal>
+  
+</root>

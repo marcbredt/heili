@@ -1,0 +1,5 @@
+<!ELEMENT root (forms+)>
+<!ELEMENT forms (form*)>
+<!ELEMENT form (#PCDATA)>
+<!ATTLIST form active CDATA #REQUIRED module CDATA #REQUIRED
+               name CDATA #REQUIRED policy CDATA #IMPLIED>

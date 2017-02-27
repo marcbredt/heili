@@ -9,7 +9,7 @@ namespace core\register;
  * @see <a style="font-weight: bold;" 
  *         href="classcore_1_1config_1_1Configuration.html">Configuration</a>
  */
-interface RegisterOperation {
+interface ManagerOperation {
 
   /**
    * Load a configuration by name. Loads the configurtion string

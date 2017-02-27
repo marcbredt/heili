@@ -1,6 +1,0 @@
-<!ELEMENT root (php-init+) >
-
-<!ELEMENT php-init (set*) >
-
-<!ELEMENT set EMPTY >
-<!ATTLIST set key CDATA #REQUIRED value CDATA #REQUIRED >

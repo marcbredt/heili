@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<calendar module="calendar" name="darian" type="solar">
+
+  <!-- sections alias months -->
+  <sections>
+    <section id="1"  name="Saggitarius" abbr="Sag" days="28" />
+    <section id="2"  name="Dhanus"      abbr="Dha" days="28" />
+    <section id="3"  name="Capricornus" abbr="Cap" days="28" />
+    <section id="4"  name="Makara"      abbr="Mak" days="28" />
+    <section id="5"  name="Aquarius"    abbr="Aqu" days="28" />
+    <section id="6"  name="Kumbha"      abbr="Kum" days="27" />
+    <section id="7"  name="Pisces"      abbr="Pis" days="28" />
+    <section id="8"  name="Mina"        abbr="Min" days="28" />
+    <section id="9"  name="Aries"       abbr="Ari" days="28" />
+    <section id="10" name="Mesha"       abbr="Mes" days="28" />
+    <section id="11" name="Taurus"      abbr="Tau" days="28" />
+    <section id="12" name="Rishabha"    abbr="Ris" days="27" />
+    <section id="13" name="Gemini"      abbr="Gem" days="28" />
+    <section id="14" name="Mithuna"     abbr="Mit" days="28" />
+    <section id="15" name="Cancer"      abbr="Can" days="28" />
+    <section id="16" name="Karka"       abbr="Kar" days="28" />
+    <section id="17" name="Leo"         abbr="Leo" days="28" />
+    <section id="18" name="Simha"       abbr="Sim" days="27" />
+    <section id="19" name="Virgo"       abbr="Vir" days="28" />
+    <section id="20" name="Kanya"       abbr="Kan" days="28" />
+    <section id="21" name="Libra"       abbr="Lib" days="28" />
+    <section id="22" name="Tula"        abbr="Tul" days="28" />
+    <section id="23" name="Scorpius"    abbr="Sco" days="28" />
+    <section id="24" name="Vrishika"    abbr="Vri" days="27" />
+  </sections>
+
+  <!-- subsections alias weeks -->
+  <subsections amount="7">
+    <subsection id="0" name="Solis"    abbr="So" />
+    <subsection id="1" name="Lunae"    abbr="Lu" />
+    <subsection id="2" name="Martis"   abbr="Ma" />
+    <subsection id="3" name="Mercurii" abbr="Me" />
+    <subsection id="4" name="Jovis"    abbr="Jo" />
+    <subsection id="5" name="Veneris"  abbr="Ve" />
+    <subsection id="6" name="Saturni"  abbr="Sa" />
+  </subsections>
+
+  <!-- intercalation rules for leap days -->
+  <rules cycle="10000">
+    <rule id="24" days="28" range="0-2000"     years="%1000,!%100,%10,!%2" />
+    <rule id="24" days="28" range="2001-4800"  years="!%150,%10,!%2"       />
+    <rule id="24" days="28" range="4801-6800"  years="!%200,%10,!%2"       />
+    <rule id="24" days="28" range="6801-8400"  years="!%300,%10,!%2"       />
+    <rule id="24" days="28" range="8401-10000" years="!%600,%10,!%2"       />
+  </rules>
+
+</calendar>

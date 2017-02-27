@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<root>
+
+  <superglobal name="session" source="_SESSION" /><!-- file="../conf/session.xml" -->
+  
+</root>

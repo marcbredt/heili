@@ -6,6 +6,7 @@ use \Exception as Exception;
 /**
  * Class used to throw an exception in case the payload part of a
  * shared memory segment entry cannot be extracted properly.
+ * @req PHP >= 5.1.0
  * @author Marc Bredt
  */
 class PayloadExtractionException extends Exception {

@@ -1,0 +1,5 @@
+<!ELEMENT root (global+,local+)>
+<!ELEMENT global (exception*)>
+<!ELEMENT local (exception*)>
+<!ELEMENT exception EMPTY>
+<!ATTLIST exception name CDATA #REQUIRED>

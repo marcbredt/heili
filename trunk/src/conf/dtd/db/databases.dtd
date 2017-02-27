@@ -1,0 +1,17 @@
+<!ELEMENT root (databases+)>
+<!ELEMENT databases (database+)>
+<!ATTLIST databases default CDATA #REQUIRED>
+<!ELEMENT database (type+,driver+,host+,port+,user+,pass+,db+,ssl*,persistent*,
+                    charset*,timeout*)>
+<!ATTLIST database active CDATA #REQUIRED name CDATA #REQUIRED>
+<!ELEMENT type (#PCDATA)>
+<!ELEMENT driver (#PCDATA)>
+<!ELEMENT host (#PCDATA)>
+<!ELEMENT port (#PCDATA)>
+<!ELEMENT user (#PCDATA)>
+<!ELEMENT pass (#PCDATA)>
+<!ELEMENT db (#PCDATA)>
+<!ELEMENT ssl (#PCDATA)>
+<!ELEMENT persistent (#PCDATA)>
+<!ELEMENT charset (#PCDATA)>
+<!ELEMENT timeout (#PCDATA)>
