@@ -1,3 +1,9 @@
+heili (0.0.2) unstable; urgency=medium
+
+  * main module system added 
+
+ -- Marc Bredt <marc.bredt@gmail.com>  Tue, 28 Feb 2017 01:17:32 +0100
+
 heili (0.0.1) unstable; urgency=low
 
   * Initial release containing merged and working components and some
